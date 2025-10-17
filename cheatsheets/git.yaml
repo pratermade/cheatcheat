@@ -1,0 +1,349 @@
+title: "Git Command Reference"
+description: "A comprehensive guide to Git commands for version control"
+category: "Developer Tools"
+commands:
+  # SETUP AND CONFIGURATION
+  - name: "git config"
+    shortDesc: "Configure Git settings"
+    syntax: "git config [--global|--local|--system] <key> <value>"
+    tags: ["setup", "configuration"]
+    complexity: "beginner"
+    examples:
+      - code: "git config --global user.name \"John Doe\""
+        description: "Set your username for all repositories"
+      - code: "git config --global user.email \"john@example.com\""
+        description: "Set your email address for all repositories"
+      - code: "git config --list"
+        description: "List all configuration settings"
+    notes:
+      - "Settings can be applied at system, global (user), or local (repository) levels"
+      - "Global settings are stored in ~/.gitconfig"
+      - "Local settings are stored in .git/config in each repository"
+    options:
+      - flag: "--global"
+        description: "Apply setting globally for the current user"
+      - flag: "--local"
+        description: "Apply setting to the current repository only (default)"
+      - flag: "--system"
+        description: "Apply setting system-wide"
+      - flag: "--list"
+        description: "List all configuration settings"
+    related: ["git init", "git clone"]
+
+  - name: "git init"
+    shortDesc: "Initialize a new Git repository"
+    syntax: "git init [directory]"
+    tags: ["setup", "repository"]
+    complexity: "beginner"
+    examples:
+      - code: "git init"
+        description: "Initialize Git in the current directory"
+      - code: "git init my-project"
+        description: "Create a new directory 'my-project' and initialize Git in it"
+    notes:
+      - "Creates a .git subdirectory with all the Git metadata and infrastructure"
+      - "Can convert an existing project to a Git repository"
+    options:
+      - flag: "--bare"
+        description: "Create a bare repository without a working directory"
+      - flag: "--template=<template-directory>"
+        description: "Specify a custom directory from which templates will be used"
+    related: ["git clone", "git config"]
+
+  - name: "git clone"
+    shortDesc: "Clone a repository into a new directory"
+    syntax: "git clone <repository> [directory]"
+    tags: ["setup", "repository"]
+    complexity: "beginner"
+    examples:
+      - code: "git clone https://github.com/user/repo.git"
+        description: "Clone a repository into a directory named after the repository"
+      - code: "git clone https://github.com/user/repo.git my-dir"
+        description: "Clone a repository into the specified directory"
+      - code: "git clone --depth=1 https://github.com/user/repo.git"
+        description: "Create a shallow clone with only the latest revision"
+    notes:
+      - "Clones the repository and creates remote-tracking branches"
+      - "Automatically sets up the 'origin' remote"
+      - "Checks out the initial branch (typically 'main' or 'master')"
+    options:
+      - flag: "--depth=<depth>"
+        description: "Create a shallow clone with limited revision history"
+      - flag: "--branch, -b <branch>"
+        description: "Clone the specified branch instead of the default"
+      - flag: "--recursive, --recurse-submodules"
+        description: "Initialize and clone submodules recursively"
+    related: ["git init", "git remote"]
+
+  # BASIC SNAPSHOTTING
+  - name: "git add"
+    shortDesc: "Add file contents to the staging area"
+    syntax: "git add [<pathspec>...]"
+    tags: ["basic", "staging"]
+    complexity: "beginner"
+    examples:
+      - code: "git add file.txt"
+        description: "Add a specific file to the staging area"
+      - code: "git add directory/"
+        description: "Add all files in a directory to the staging area"
+      - code: "git add ."
+        description: "Add all new and modified files to the staging area"
+      - code: "git add -p file.txt"
+        description: "Interactively choose parts of the file to add"
+    notes:
+      - "Updates the index with current content of files"
+      - "This is the first step in the basic Git workflow"
+      - "Use before committing changes"
+    options:
+      - flag: "-A, --all"
+        description: "Add all changes (new, modified, and deleted files)"
+      - flag: "-p, --patch"
+        description: "Interactively select hunks to stage"
+      - flag: "-u, --update"
+        description: "Update tracked files (ignore untracked files)"
+      - flag: "--dry-run"
+        description: "Show what would be done, without making actual changes"
+    related: ["git status", "git commit", "git restore", "git reset"]
+
+  - name: "git status"
+    shortDesc: "Show the working tree status"
+    syntax: "git status [options]"
+    tags: ["basic", "info"]
+    complexity: "beginner"
+    examples:
+      - code: "git status"
+        description: "Display full status output"
+      - code: "git status -s"
+        description: "Give output in short format"
+    notes:
+      - "Shows which files are modified, staged, or untracked"
+      - "Provides guidance on how to change the state of files"
+      - "One of the most frequently used Git commands"
+    options:
+      - flag: "-s, --short"
+        description: "Give output in short format"
+      - flag: "-b, --branch"
+        description: "Show branch information"
+      - flag: "--untracked-files=<mode>"
+        description: "Show untracked files (no, normal, all)"
+    related: ["git add", "git commit"]
+
+  - name: "git commit"
+    shortDesc: "Record changes to the repository"
+    syntax: "git commit [options]"
+    tags: ["basic", "commit"]
+    complexity: "beginner"
+    examples:
+      - code: "git commit -m \"Add new feature\""
+        description: "Commit staged changes with a message"
+      - code: "git commit -a -m \"Fix bug\""
+        description: "Stage all modified tracked files and commit"
+      - code: "git commit --amend"
+        description: "Modify the last commit"
+    notes:
+      - "Creates a new commit with the currently staged changes"
+      - "Each commit has a unique identifier (hash)"
+      - "Good commit messages are critical for project history"
+    options:
+      - flag: "-m <message>"
+        description: "Use the given message as the commit message"
+      - flag: "-a, --all"
+        description: "Automatically stage all modified and deleted files"
+      - flag: "--amend"
+        description: "Replace the tip of the current branch with a new commit"
+      - flag: "--no-verify"
+        description: "Bypass the pre-commit and commit-msg hooks"
+    related: ["git add", "git push", "git log"]
+
+  - name: "git restore"
+    shortDesc: "Restore working tree files"
+    syntax: "git restore [<pathspec>...]"
+    tags: ["basic", "undo"]
+    complexity: "intermediate"
+    examples:
+      - code: "git restore file.txt"
+        description: "Discard changes in working directory for file.txt"
+      - code: "git restore --staged file.txt"
+        description: "Unstage file.txt, keeping changes in working directory"
+      - code: "git restore --source=HEAD~1 file.txt"
+        description: "Restore file.txt to its state from the commit before HEAD"
+    notes:
+      - "Used to restore files in the working tree from the index or another commit"
+      - "Can be used to unstage files or discard uncommitted local changes"
+      - "This is a relatively new command, introduced in Git 2.23"
+    options:
+      - flag: "--staged, --source=index"
+        description: "Restore the index (unstage files)"
+      - flag: "--worktree, --source=worktree"
+        description: "Restore the working tree (discard uncommitted changes)"
+      - flag: "--source=<commit>"
+        description: "Restore from a specific commit instead of the index"
+      - flag: "-p, --patch"
+        description: "Interactively select hunks to restore"
+    related: ["git reset", "git checkout", "git add"]
+
+  # BRANCHING AND MERGING
+  - name: "git branch"
+    shortDesc: "List, create, or delete branches"
+    syntax: "git branch [options] [branch-name]"
+    tags: ["branch", "intermediate"]
+    complexity: "intermediate"
+    examples:
+      - code: "git branch"
+        description: "List all local branches"
+      - code: "git branch -r"
+        description: "List remote-tracking branches"
+      - code: "git branch feature"
+        description: "Create a new branch named 'feature'"
+      - code: "git branch -d feature"
+        description: "Delete the branch named 'feature'"
+    notes:
+      - "Branches are lightweight movable pointers to commits"
+      - "Creating a branch does not automatically switch to it"
+      - "The current branch is indicated with an asterisk (*)"
+    options:
+      - flag: "-a, --all"
+        description: "List both remote-tracking and local branches"
+      - flag: "-r, --remote"
+        description: "List remote-tracking branches"
+      - flag: "-d, --delete"
+        description: "Delete a branch"
+      - flag: "-D"
+        description: "Force delete a branch, even if it has unmerged changes"
+      - flag: "-m, --move"
+        description: "Move/rename a branch"
+    related: ["git checkout", "git switch", "git merge"]
+
+  - name: "git checkout"
+    shortDesc: "Switch branches or restore working tree files"
+    syntax: "git checkout [options] <branch-name> | -- <pathspec>..."
+    tags: ["branch", "navigation"]
+    complexity: "intermediate"
+    examples:
+      - code: "git checkout feature"
+        description: "Switch to the 'feature' branch"
+      - code: "git checkout -b new-feature"
+        description: "Create and switch to a new branch 'new-feature'"
+      - code: "git checkout -- file.txt"
+        description: "Discard changes to file.txt in working directory"
+      - code: "git checkout HEAD~1"
+        description: "Check out the commit before the latest"
+    notes:
+      - "Updates files in the working directory to match a branch or commit"
+      - "Can be used for branching and for restoring files (dual purpose)"
+      - "For newer Git versions, consider using 'git switch' for branch operations"
+    options:
+      - flag: "-b <new-branch>"
+        description: "Create and checkout a new branch"
+      - flag: "-B <new-branch>"
+        description: "Create/reset and checkout a branch"
+      - flag: "--track, -t"
+        description: "Set up tracking mode when checking out a branch"
+      - flag: "--orphan <new-branch>"
+        description: "Create a new orphan branch"
+    related: ["git switch", "git restore", "git branch", "git merge"]
+
+  - name: "git switch"
+    shortDesc: "Switch branches"
+    syntax: "git switch [options] <branch-name>"
+    tags: ["branch", "navigation"]
+    complexity: "intermediate"
+    examples:
+      - code: "git switch feature"
+        description: "Switch to the 'feature' branch"
+      - code: "git switch -c new-feature"
+        description: "Create and switch to a new branch 'new-feature'"
+      - code: "git switch -"
+        description: "Switch back to the previous branch"
+    notes:
+      - "Introduced in Git 2.23 to provide a clearer alternative to 'git checkout'"
+      - "Focused specifically on switching branches (not for file restoration)"
+      - "More intuitive command name for its function"
+    options:
+      - flag: "-c <new-branch>"
+        description: "Create and switch to a new branch"
+      - flag: "-C <new-branch>"
+        description: "Create/reset and switch to a branch"
+      - flag: "--detach <commit>"
+        description: "Switch to a specific commit in detached HEAD state"
+      - flag: "--track, -t"
+        description: "Set up tracking mode when switching to a branch"
+    related: ["git checkout", "git branch", "git restore"]
+
+  - name: "git merge"
+    shortDesc: "Join two or more development histories together"
+    syntax: "git merge [options] <branch-name>..."
+    tags: ["branch", "integration"]
+    complexity: "intermediate"
+    examples:
+      - code: "git merge feature"
+        description: "Merge the 'feature' branch into the current branch"
+      - code: "git merge --no-ff feature"
+        description: "Merge and always create a merge commit, even for fast-forwards"
+      - code: "git merge --abort"
+        description: "Abort the current merge and return to pre-merge state"
+    notes:
+      - "Incorporates changes from another branch into the current branch"
+      - "May result in merge conflicts that need to be resolved"
+      - "Creates a merge commit by default when not a fast-forward"
+    options:
+      - flag: "--ff"
+        description: "Fast-forward merge when possible (default)"
+      - flag: "--no-ff"
+        description: "Always create a merge commit, even for fast-forward merges"
+      - flag: "--squash"
+        description: "Create a single commit instead of a merge"
+      - flag: "--abort"
+        description: "Abort the current conflict resolution process"
+      - flag: "--strategy=<strategy>"
+        description: "Use a specific merge strategy (recursive, resolve, etc.)"
+    related: ["git rebase", "git checkout", "git pull"]
+
+  - name: "git rebase"
+    shortDesc: "Reapply commits on top of another base"
+    syntax: "git rebase [options] [<branch>]"
+    tags: ["branch", "integration", "advanced"]
+    complexity: "advanced"
+    examples:
+      - code: "git rebase main"
+        description: "Reapply commits from current branch on top of 'main'"
+      - code: "git rebase -i HEAD~3"
+        description: "Interactive rebase of the last 3 commits"
+      - code: "git rebase --onto main feature sub-feature"
+        description: "Rebase 'sub-feature' onto 'main', skipping 'feature'"
+    notes:
+      - "Rewrites commit history by creating new commits"
+      - "Can lead to cleaner, more linear project history"
+      - "Should not be used on commits that have been pushed publicly"
+      - "May require resolving conflicts during the process"
+    options:
+      - flag: "-i, --interactive"
+        description: "Interactive mode for more control over the rebase process"
+      - flag: "--continue"
+        description: "Continue the rebase after resolving conflicts"
+      - flag: "--abort"
+        description: "Abort the rebase operation and return to the pre-rebase state"
+      - flag: "--onto <branch>"
+        description: "Specify a new base for the rebase"
+    related: ["git merge", "git cherry-pick", "git reset"]
+
+  # SHARING AND UPDATING
+  - name: "git fetch"
+    shortDesc: "Download objects and refs from another repository"
+    syntax: "git fetch [options] [<repository> [<refspec>...]]"
+    tags: ["remote", "synchronization"]
+    complexity: "intermediate"
+    examples:
+      - code: "git fetch origin"
+        description: "Fetch from the 'origin' remote"
+      - code: "git fetch --all"
+        description: "Fetch from all remotes"
+      - code: "git fetch origin feature"
+        description: "Fetch a specific branch from 'origin'"
+    notes:
+      - "Downloads changes from remote but doesn't integrate them into local branches"
+      - "Updates remote-tracking branches"
+      - "Safe operation that doesn't change your working directory"
+    options:
+      - flag: "--all"
+        description:
