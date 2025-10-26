@@ -1,0 +1,1195 @@
+title: "kubectl Cheat Sheet"
+description: "Kubernetes command-line tool for controlling Kubernetes clusters"
+category: "DevOps"
+
+commands:
+  # Basic Resource Management
+  - name: "kubectl get"
+    shortDesc: "Display one or many resources"
+    syntax: "kubectl get <resource> [name] [flags]"
+    tags: ["query", "resources", "info"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl get pods"
+        description: "List all pods in the current namespace"
+      - code: "kubectl get pods -o wide"
+        description: "List all pods with additional details like node and IP"
+      - code: "kubectl get all --all-namespaces"
+        description: "List all resources across all namespaces"
+    notes:
+      - "Returns resources in the current namespace by default"
+      - "Use -o json or -o yaml for machine-readable output"
+      - "Supports watching resources in real-time with --watch flag"
+    options:
+      - flag: "-o, --output"
+        description: "Output format: json|yaml|wide|name|custom-columns"
+      - flag: "-n, --namespace"
+        description: "Specify the namespace to query"
+      - flag: "--all-namespaces, -A"
+        description: "Query resources across all namespaces"
+      - flag: "-w, --watch"
+        description: "Watch for changes to resources"
+    related: ["kubectl describe", "kubectl explain", "kubectl top"]
+
+  - name: "kubectl describe"
+    shortDesc: "Show detailed information about a specific resource"
+    syntax: "kubectl describe <resource> <name> [flags]"
+    tags: ["query", "debug", "info"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl describe pod nginx-7848d4b86f-5xq2k"
+        description: "Show detailed information about a specific pod"
+      - code: "kubectl describe node worker-node-01"
+        description: "Display node details including capacity and conditions"
+      - code: "kubectl describe service/my-service"
+        description: "Show service details including endpoints and selectors"
+    notes:
+      - "Provides events, conditions, and configuration details"
+      - "Useful for troubleshooting resource issues"
+      - "Shows resource limits, requests, and actual usage"
+    options:
+      - flag: "-n, --namespace"
+        description: "Specify the namespace of the resource"
+      - flag: "--show-events"
+        description: "Show events related to the resource (default true)"
+    related: ["kubectl get", "kubectl logs", "kubectl events"]
+
+  - name: "kubectl create"
+    shortDesc: "Create a resource from a file or stdin"
+    syntax: "kubectl create <resource> [flags]"
+    tags: ["create", "resources", "deployment"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl create deployment nginx --image=nginx:latest"
+        description: "Create a deployment named nginx using the nginx image"
+      - code: "kubectl create -f deployment.yaml"
+        description: "Create resources defined in a YAML file"
+      - code: "kubectl create namespace dev"
+        description: "Create a new namespace called dev"
+    notes:
+      - "Fails if the resource already exists (use kubectl apply for updates)"
+      - "Can create resources imperatively or from manifest files"
+      - "Supports dry-run mode with --dry-run=client flag"
+    options:
+      - flag: "-f, --filename"
+        description: "Filename or directory containing the resource definition"
+      - flag: "--dry-run"
+        description: "Preview the object without creating it: none|client|server"
+      - flag: "-o, --output"
+        description: "Output format for the created resource"
+    related: ["kubectl apply", "kubectl run", "kubectl replace"]
+
+  - name: "kubectl apply"
+    shortDesc: "Apply a configuration to a resource by filename or stdin"
+    syntax: "kubectl apply -f <filename> [flags]"
+    tags: ["create", "update", "deployment"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl apply -f deployment.yaml"
+        description: "Apply the configuration in deployment.yaml"
+      - code: "kubectl apply -f ./configs/"
+        description: "Apply all YAML files in the configs directory"
+      - code: "kubectl apply -f https://example.com/manifest.yaml"
+        description: "Apply a configuration from a remote URL"
+    notes:
+      - "Creates resources if they don't exist, updates them if they do"
+      - "Maintains a record of previous configurations for tracking changes"
+      - "Preferred method for declarative resource management"
+    options:
+      - flag: "-f, --filename"
+        description: "File, directory, or URL containing configuration"
+      - flag: "--dry-run"
+        description: "Preview changes without applying: none|client|server"
+      - flag: "-R, --recursive"
+        description: "Process directory recursively"
+      - flag: "--prune"
+        description: "Delete resources not in the current configuration"
+    related: ["kubectl create", "kubectl replace", "kubectl diff"]
+
+  - name: "kubectl delete"
+    shortDesc: "Delete resources by filenames, stdin, resources and names"
+    syntax: "kubectl delete <resource> <name> [flags]"
+    tags: ["delete", "cleanup", "resources"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl delete pod nginx-7848d4b86f-5xq2k"
+        description: "Delete a specific pod by name"
+      - code: "kubectl delete -f deployment.yaml"
+        description: "Delete resources defined in the YAML file"
+      - code: "kubectl delete pods --all"
+        description: "Delete all pods in the current namespace"
+    notes:
+      - "Deletion may take time due to graceful termination periods"
+      - "Use --force and --grace-period=0 for immediate deletion (not recommended)"
+      - "Be careful with --all flag to avoid unintended deletions"
+    options:
+      - flag: "--all"
+        description: "Delete all resources of the specified type"
+      - flag: "--grace-period"
+        description: "Seconds to wait before force killing the resource"
+      - flag: "--force"
+        description: "Immediately remove resources from API and bypass graceful deletion"
+      - flag: "-f, --filename"
+        description: "Filename containing resource definitions to delete"
+    related: ["kubectl drain", "kubectl cordon", "kubectl patch"]
+
+  # Pod Management
+  - name: "kubectl run"
+    shortDesc: "Create and run a particular image in a pod"
+    syntax: "kubectl run <name> --image=<image> [flags]"
+    tags: ["pods", "create", "deployment"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl run nginx --image=nginx:latest"
+        description: "Create a pod running nginx with the latest image"
+      - code: "kubectl run busybox --image=busybox --rm -it -- sh"
+        description: "Run an interactive busybox pod and delete it after exit"
+      - code: "kubectl run test --image=nginx --dry-run=client -o yaml > pod.yaml"
+        description: "Generate a pod manifest without creating it"
+    notes:
+      - "Creates a standalone pod by default (not a deployment)"
+      - "Use --rm flag to automatically delete the pod after it exits"
+      - "Great for quick testing and debugging scenarios"
+    options:
+      - flag: "--image"
+        description: "The container image to run"
+      - flag: "-it"
+        description: "Keep stdin open and allocate a TTY for interactive use"
+      - flag: "--rm"
+        description: "Delete the pod after it exits"
+      - flag: "--env, -e"
+        description: "Environment variables to set in the container"
+    related: ["kubectl exec", "kubectl create", "kubectl logs"]
+
+  - name: "kubectl exec"
+    shortDesc: "Execute a command in a container"
+    syntax: "kubectl exec <pod> [flags] -- <command> [args]"
+    tags: ["pods", "debug", "troubleshoot"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl exec nginx-pod -- ls /usr/share/nginx/html"
+        description: "Execute a command in a single-container pod"
+      - code: "kubectl exec -it nginx-pod -- /bin/bash"
+        description: "Open an interactive bash shell in the pod"
+      - code: "kubectl exec multi-container-pod -c nginx -- env"
+        description: "Execute command in specific container of a multi-container pod"
+    notes:
+      - "Requires the command/shell to exist in the container image"
+      - "Use -c to specify container in multi-container pods"
+      - "Interactive sessions require -it flags for proper terminal allocation"
+    options:
+      - flag: "-it"
+        description: "Interactive mode with TTY allocation"
+      - flag: "-c, --container"
+        description: "Specify container name in multi-container pods"
+      - flag: "-n, --namespace"
+        description: "Specify the namespace of the pod"
+    related: ["kubectl run", "kubectl attach", "kubectl logs"]
+
+  - name: "kubectl logs"
+    shortDesc: "Print the logs for a container in a pod"
+    syntax: "kubectl logs <pod> [flags]"
+    tags: ["pods", "debug", "monitoring"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl logs nginx-pod"
+        description: "Print logs from a single-container pod"
+      - code: "kubectl logs nginx-pod -c sidecar --tail=50"
+        description: "Show last 50 lines from specific container"
+      - code: "kubectl logs -f deployment/nginx"
+        description: "Stream logs from a deployment in real-time"
+    notes:
+      - "Only shows logs from running or recently terminated containers"
+      - "Use --previous flag to view logs from crashed containers"
+      - "Logs are rotated and may not contain complete history"
+    options:
+      - flag: "-f, --follow"
+        description: "Stream logs in real-time"
+      - flag: "-c, --container"
+        description: "Specify container in multi-container pods"
+      - flag: "--tail"
+        description: "Number of lines to show from the end of logs"
+      - flag: "--previous, -p"
+        description: "Show logs from previous container instance"
+      - flag: "--since"
+        description: "Show logs since a relative time (e.g., 5m, 1h)"
+    related: ["kubectl describe", "kubectl exec", "kubectl top"]
+
+  - name: "kubectl port-forward"
+    shortDesc: "Forward one or more local ports to a pod"
+    syntax: "kubectl port-forward <pod> <local-port>:<pod-port> [flags]"
+    tags: ["networking", "debug", "access"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl port-forward pod/nginx-pod 8080:80"
+        description: "Forward local port 8080 to pod port 80"
+      - code: "kubectl port-forward service/my-service 8080:80"
+        description: "Forward local port to a service"
+      - code: "kubectl port-forward deployment/nginx 8080:80"
+        description: "Forward to a deployment (uses first pod)"
+    notes:
+      - "Connection is active only while the command is running"
+      - "Useful for accessing services without exposing them externally"
+      - "Can forward multiple ports with multiple port pairs"
+    options:
+      - flag: "--address"
+        description: "Addresses to listen on (comma-separated, default localhost)"
+      - flag: "-n, --namespace"
+        description: "Namespace of the resource"
+    related: ["kubectl proxy", "kubectl expose", "kubectl get"]
+
+  - name: "kubectl cp"
+    shortDesc: "Copy files and directories to and from containers"
+    syntax: "kubectl cp <source> <destination> [flags]"
+    tags: ["pods", "files", "transfer"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl cp /tmp/foo nginx-pod:/tmp/bar"
+        description: "Copy local file to pod"
+      - code: "kubectl cp nginx-pod:/tmp/foo /tmp/bar"
+        description: "Copy file from pod to local machine"
+      - code: "kubectl cp nginx-pod:/logs/ ./logs/ -c nginx"
+        description: "Copy directory from specific container in pod"
+    notes:
+      - "Requires tar binary to be present in the container"
+      - "Use -c flag to specify container in multi-container pods"
+      - "Not suitable for large file transfers or continuous syncing"
+    options:
+      - flag: "-c, --container"
+        description: "Container name (for multi-container pods)"
+      - flag: "-n, --namespace"
+        description: "Namespace of the pod"
+    related: ["kubectl exec", "kubectl run", "kubectl logs"]
+
+  # Configuration & Context
+  - name: "kubectl config view"
+    shortDesc: "Display merged kubeconfig settings"
+    syntax: "kubectl config view [flags]"
+    tags: ["config", "context", "cluster"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl config view"
+        description: "Display the current kubeconfig configuration"
+      - code: "kubectl config view --minify"
+        description: "Show only the current context configuration"
+      - code: "kubectl config view --raw"
+        description: "Display raw config including credentials"
+    notes:
+      - "Merges configuration from all kubeconfig files"
+      - "Credentials are hidden by default for security"
+      - "Use --raw to see sensitive data like certificates"
+    options:
+      - flag: "--minify"
+        description: "Show only configuration for current context"
+      - flag: "--raw"
+        description: "Display raw config including credentials"
+      - flag: "--flatten"
+        description: "Flatten merged configuration into a single file"
+    related: ["kubectl config use-context", "kubectl config get-contexts", "kubectl cluster-info"]
+
+  - name: "kubectl config use-context"
+    shortDesc: "Set the current-context in kubeconfig"
+    syntax: "kubectl config use-context <context-name>"
+    tags: ["config", "context", "cluster"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl config use-context production"
+        description: "Switch to the production cluster context"
+      - code: "kubectl config use-context minikube"
+        description: "Switch to local minikube cluster"
+    notes:
+      - "Changes the active cluster/namespace for all subsequent commands"
+      - "Verify current context with 'kubectl config current-context'"
+      - "Be careful when switching contexts to avoid affecting wrong clusters"
+    options:
+      - flag: ""
+        description: "No additional flags commonly used"
+    related: ["kubectl config get-contexts", "kubectl config current-context", "kubectl config set-context"]
+
+  - name: "kubectl config get-contexts"
+    shortDesc: "Display available contexts"
+    syntax: "kubectl config get-contexts [flags]"
+    tags: ["config", "context", "info"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl config get-contexts"
+        description: "List all available contexts with current marked by asterisk"
+      - code: "kubectl config get-contexts --output=name"
+        description: "List only context names"
+    notes:
+      - "Shows cluster, user, and namespace for each context"
+      - "Current context is marked with an asterisk (*)"
+      - "Useful for verifying available clusters before switching"
+    options:
+      - flag: "--output, -o"
+        description: "Output format: name for simple list"
+      - flag: "--no-headers"
+        description: "Don't print header line"
+    related: ["kubectl config use-context", "kubectl config current-context", "kubectl config view"]
+
+  - name: "kubectl config set-context"
+    shortDesc: "Set a context entry in kubeconfig"
+    syntax: "kubectl config set-context <context-name> [flags]"
+    tags: ["config", "context", "setup"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl config set-context dev --namespace=development"
+        description: "Set default namespace for dev context"
+      - code: "kubectl config set-context --current --namespace=production"
+        description: "Change namespace for current context"
+      - code: "kubectl config set-context prod --cluster=prod-cluster --user=admin"
+        description: "Create new context with cluster and user"
+    notes:
+      - "Creates a new context if it doesn't exist"
+      - "Use --current to modify the active context"
+      - "Namespace setting persists for the context"
+    options:
+      - flag: "--current"
+        description: "Modify the current context"
+      - flag: "--namespace"
+        description: "Set default namespace for the context"
+      - flag: "--cluster"
+        description: "Set cluster for the context"
+      - flag: "--user"
+        description: "Set user for the context"
+    related: ["kubectl config use-context", "kubectl config view", "kubectl create namespace"]
+
+  # Deployments & Scaling
+  - name: "kubectl scale"
+    shortDesc: "Set a new size for a deployment, replica set, or replication controller"
+    syntax: "kubectl scale <resource> <name> --replicas=<count> [flags]"
+    tags: ["scaling", "deployment", "replicas"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl scale deployment nginx --replicas=3"
+        description: "Scale nginx deployment to 3 replicas"
+      - code: "kubectl scale --replicas=0 deployment/my-app"
+        description: "Scale down deployment to zero replicas"
+      - code: "kubectl scale --current-replicas=2 --replicas=5 deployment/nginx"
+        description: "Scale only if current replica count matches"
+    notes:
+      - "Does not affect HorizontalPodAutoscaler settings"
+      - "Scaling to 0 effectively pauses the application"
+      - "Use --current-replicas as a safety check"
+    options:
+      - flag: "--replicas"
+        description: "The desired number of replicas"
+      - flag: "--current-replicas"
+        description: "Precondition for current size (safety check)"
+      - flag: "--timeout"
+        description: "Time to wait before giving up on scaling operation"
+    related: ["kubectl autoscale", "kubectl rollout", "kubectl get"]
+
+  - name: "kubectl rollout"
+    shortDesc: "Manage the rollout of a resource"
+    syntax: "kubectl rollout <subcommand> <resource> [flags]"
+    tags: ["deployment", "updates", "rollback"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl rollout status deployment/nginx"
+        description: "Check the status of a deployment rollout"
+      - code: "kubectl rollout history deployment/nginx"
+        description: "View rollout history for a deployment"
+      - code: "kubectl rollout undo deployment/nginx"
+        description: "Rollback to previous deployment revision"
+    notes:
+      - "Rollout applies to deployments, daemonsets, and statefulsets"
+      - "Undo can target specific revision with --to-revision flag"
+      - "History is limited by revisionHistoryLimit in deployment spec"
+    options:
+      - flag: "--to-revision"
+        description: "Rollback to a specific revision number"
+      - flag: "-w, --watch"
+        description: "Watch the rollout status until completion"
+    related: ["kubectl scale", "kubectl set image", "kubectl apply"]
+
+  - name: "kubectl set image"
+    shortDesc: "Update image of a pod template"
+    syntax: "kubectl set image <resource>/<name> <container>=<image> [flags]"
+    tags: ["deployment", "updates", "images"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl set image deployment/nginx nginx=nginx:1.20"
+        description: "Update nginx container image to version 1.20"
+      - code: "kubectl set image deployment/app *=myapp:v2"
+        description: "Update all containers in deployment to version v2"
+      - code: "kubectl set image deployment/nginx nginx=nginx:1.21 --record"
+        description: "Update image and record the change in rollout history"
+    notes:
+      - "Triggers a rolling update of the deployment"
+      - "Use --record flag to save command in revision history"
+      - "Asterisk (*) updates all containers to same image"
+    options:
+      - flag: "--record"
+        description: "Record current command in resource annotation"
+      - flag: "--all"
+        description: "Select all resources in the namespace"
+      - flag: "-l, --selector"
+        description: "Filter resources by label selector"
+    related: ["kubectl rollout", "kubectl apply", "kubectl patch"]
+
+  - name: "kubectl autoscale"
+    shortDesc: "Auto-scale a deployment, replica set, or replication controller"
+    syntax: "kubectl autoscale <resource> <name> --min=<min> --max=<max> [flags]"
+    tags: ["scaling", "automation", "hpa"]
+    complexity: "advanced"
+    examples:
+      - code: "kubectl autoscale deployment nginx --min=2 --max=10 --cpu-percent=80"
+        description: "Auto-scale based on CPU usage maintaining 80% target"
+      - code: "kubectl autoscale deployment api --min=3 --max=20"
+        description: "Create HPA with default CPU target of 80%"
+    notes:
+      - "Creates a HorizontalPodAutoscaler resource"
+      - "Requires metrics-server to be installed in the cluster"
+      - "Default target CPU utilization is 80% if not specified"
+    options:
+      - flag: "--min"
+        description: "Minimum number of replicas"
+      - flag: "--max"
+        description: "Maximum number of replicas"
+      - flag: "--cpu-percent"
+        description: "Target CPU utilization percentage"
+    related: ["kubectl scale", "kubectl top", "kubectl get hpa"]
+
+  # Namespaces
+  - name: "kubectl create namespace"
+    shortDesc: "Create a new namespace"
+    syntax: "kubectl create namespace <name> [flags]"
+    tags: ["namespace", "create", "organization"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl create namespace development"
+        description: "Create a namespace named development"
+      - code: "kubectl create ns production"
+        description: "Create namespace using shortened syntax"
+    notes:
+      - "Namespaces provide logical separation of resources"
+      - "Default namespace is 'default' if not specified"
+      - "System namespaces include kube-system, kube-public, kube-node-lease"
+    options:
+      - flag: "--dry-run"
+        description: "Preview namespace creation without creating it"
+      - flag: "-o, --output"
+        description: "Output format for created resource"
+    related: ["kubectl config set-context", "kubectl get namespaces", "kubectl delete namespace"]
+
+  - name: "kubectl get namespaces"
+    shortDesc: "List all namespaces in the cluster"
+    syntax: "kubectl get namespaces [flags]"
+    tags: ["namespace", "query", "info"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl get namespaces"
+        description: "List all namespaces with status and age"
+      - code: "kubectl get ns"
+        description: "List namespaces using shortened syntax"
+      - code: "kubectl get namespaces -o json"
+        description: "Get namespace details in JSON format"
+    notes:
+      - "Shows namespace status (Active, Terminating)"
+      - "Can be abbreviated as 'ns' for convenience"
+      - "All clusters have default, kube-system, and kube-public namespaces"
+    options:
+      - flag: "-o, --output"
+        description: "Output format: json|yaml|wide|name"
+      - flag: "--show-labels"
+        description: "Show all labels for each namespace"
+    related: ["kubectl create namespace", "kubectl config set-context", "kubectl describe namespace"]
+
+  # Services & Networking
+  - name: "kubectl expose"
+    shortDesc: "Expose a resource as a new Kubernetes service"
+    syntax: "kubectl expose <resource> <name> --port=<port> [flags]"
+    tags: ["networking", "service", "expose"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl expose deployment nginx --port=80 --type=LoadBalancer"
+        description: "Expose deployment as a LoadBalancer service"
+      - code: "kubectl expose pod nginx-pod --port=8080 --target-port=80"
+        description: "Expose pod with different service and container ports"
+      - code: "kubectl expose deployment api --port=3000 --name=api-service"
+        description: "Expose deployment with custom service name"
+    notes:
+      - "Creates a service that routes traffic to the resource"
+      - "Default service type is ClusterIP (internal only)"
+      - "LoadBalancer type requires cloud provider support"
+    options:
+      - flag: "--port"
+        description: "Port that the service should expose"
+      - flag: "--target-port"
+        description: "Port on the pod to direct traffic to"
+      - flag: "--type"
+        description: "Service type: ClusterIP|NodePort|LoadBalancer|ExternalName"
+      - flag: "--name"
+        description: "Name for the service (defaults to resource name)"
+    related: ["kubectl create service", "kubectl get services", "kubectl port-forward"]
+
+  - name: "kubectl get services"
+    shortDesc: "List services in a namespace"
+    syntax: "kubectl get services [flags]"
+    tags: ["networking", "service", "query"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl get services"
+        description: "List all services in current namespace"
+      - code: "kubectl get svc -o wide"
+        description: "List services with additional details including selector"
+      - code: "kubectl get services --all-namespaces"
+        description: "List services across all namespaces"
+    notes:
+      - "Shows service type, cluster IP, and exposed ports"
+      - "Can be abbreviated as 'svc'"
+      - "External IP shown for LoadBalancer services when available"
+    options:
+      - flag: "-o, --output"
+        description: "Output format: wide|json|yaml"
+      - flag: "-n, --namespace"
+        description: "Namespace to query"
+      - flag: "--all-namespaces, -A"
+        description: "List services across all namespaces"
+    related: ["kubectl expose", "kubectl describe service", "kubectl get endpoints"]
+
+  - name: "kubectl proxy"
+    shortDesc: "Run a proxy to the Kubernetes API server"
+    syntax: "kubectl proxy [flags]"
+    tags: ["networking", "api", "access"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl proxy"
+        description: "Start proxy on default port 8001"
+      - code: "kubectl proxy --port=8080"
+        description: "Start proxy on custom port"
+      - code: "kubectl proxy --address='0.0.0.0' --accept-hosts='.*'"
+        description: "Allow remote access to the proxy"
+    notes:
+      - "Provides authenticated access to Kubernetes API"
+      - "Default binds only to localhost for security"
+      - "Access API at http://localhost:8001/api/v1"
+    options:
+      - flag: "--port, -p"
+        description: "Port for the proxy server (default 8001)"
+      - flag: "--address"
+        description: "IP address to bind (default 127.0.0.1)"
+      - flag: "--accept-hosts"
+        description: "Regular expression for acceptable hostnames"
+    related: ["kubectl port-forward", "kubectl api-resources", "kubectl cluster-info"]
+
+  # Advanced Resource Management
+  - name: "kubectl label"
+    shortDesc: "Update labels on a resource"
+    syntax: "kubectl label <resource> <name> <key>=<value> [flags]"
+    tags: ["labels", "metadata", "organization"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl label pods nginx-pod env=production"
+        description: "Add or update label on a pod"
+      - code: "kubectl label pods nginx-pod env-"
+        description: "Remove label from pod (note the trailing dash)"
+      - code: "kubectl label pods --all tier=frontend"
+        description: "Add label to all pods in namespace"
+    notes:
+      - "Labels are key-value pairs for organizing resources"
+      - "Use trailing dash to remove a label"
+      - "Overwrite existing labels with --overwrite flag"
+    options:
+      - flag: "--overwrite"
+        description: "Allow overwriting existing labels"
+      - flag: "--all"
+        description: "Apply to all resources of specified type"
+      - flag: "-l, --selector"
+        description: "Filter resources by existing labels"
+    related: ["kubectl annotate", "kubectl get -l", "kubectl delete -l"]
+
+  - name: "kubectl annotate"
+    shortDesc: "Update annotations on a resource"
+    syntax: "kubectl annotate <resource> <name> <key>=<value> [flags]"
+    tags: ["annotations", "metadata", "documentation"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl annotate pod nginx-pod description='Main web server'"
+        description: "Add annotation to a pod"
+      - code: "kubectl annotate pod nginx-pod description-"
+        description: "Remove annotation from pod"
+      - code: "kubectl annotate deployment nginx kubernetes.io/change-cause='Updated to v1.20'"
+        description: "Add change-cause annotation for rollout history"
+    notes:
+      - "Annotations store non-identifying metadata"
+      - "Unlike labels, annotations are not used for selection"
+      - "Useful for storing build info, contact details, or documentation"
+    options:
+      - flag: "--overwrite"
+        description: "Allow overwriting existing annotations"
+      - flag: "--all"
+        description: "Apply to all resources of specified type"
+    related: ["kubectl label", "kubectl describe", "kubectl set"]
+
+  - name: "kubectl patch"
+    shortDesc: "Update fields of a resource using strategic merge patch"
+    syntax: "kubectl patch <resource> <name> -p '<patch>' [flags]"
+    tags: ["update", "modify", "advanced"]
+    complexity: "advanced"
+    examples:
+      - code: "kubectl patch deployment nginx -p '{\"spec\":{\"replicas\":3}}'"
+        description: "Update replica count using JSON patch"
+      - code: "kubectl patch node worker-01 -p '{\"spec\":{\"unschedulable\":true}}'"
+        description: "Mark node as unschedulable (cordon)"
+      - code: "kubectl patch svc nginx -p '{\"spec\":{\"type\":\"LoadBalancer\"}}'"
+        description: "Change service type to LoadBalancer"
+    notes:
+      - "Supports JSON, YAML, and strategic merge patch formats"
+      - "More flexible than 'kubectl set' for complex updates"
+      - "Use JSON syntax carefully with proper escaping"
+    options:
+      - flag: "-p, --patch"
+        description: "The patch to apply (JSON or YAML)"
+      - flag: "--type"
+        description: "Patch type: json|merge|strategic (default strategic)"
+      - flag: "--dry-run"
+        description: "Preview patch without applying"
+    related: ["kubectl set", "kubectl apply", "kubectl edit"]
+
+  - name: "kubectl edit"
+    shortDesc: "Edit a resource on the server"
+    syntax: "kubectl edit <resource> <name> [flags]"
+    tags: ["update", "modify", "interactive"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl edit deployment nginx"
+        description: "Open deployment in default editor for modification"
+      - code: "kubectl edit svc/nginx"
+        description: "Edit service using resource/name syntax"
+      - code: "KUBE_EDITOR=nano kubectl edit pod nginx-pod"
+        description: "Edit pod using nano instead of default editor"
+    notes:
+      - "Opens resource in editor specified by KUBE_EDITOR or EDITOR env var"
+      - "Changes are applied immediately after saving and closing"
+      - "Validation errors prevent saving invalid configurations"
+    options:
+      - flag: "-o, --output"
+        description: "Output format when displaying resource: yaml|json"
+      - flag: "-n, --namespace"
+        description: "Namespace of the resource"
+    related: ["kubectl patch", "kubectl apply", "kubectl replace"]
+
+  - name: "kubectl replace"
+    shortDesc: "Replace a resource by filename or stdin"
+    syntax: "kubectl replace -f <filename> [flags]"
+    tags: ["update", "replace", "deployment"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl replace -f deployment.yaml"
+        description: "Replace resource with updated YAML file"
+      - code: "kubectl replace --force -f pod.yaml"
+        description: "Delete and recreate the resource"
+      - code: "kubectl get pod nginx -o yaml | kubectl replace -f -"
+        description: "Export and immediately replace a pod"
+    notes:
+      - "Resource must already exist (unlike apply which creates or updates)"
+      - "Use --force to delete and recreate the resource"
+      - "Entire resource is replaced, not merged like apply"
+    options:
+      - flag: "-f, --filename"
+        description: "Filename containing the resource definition"
+      - flag: "--force"
+        description: "Delete and recreate the resource"
+      - flag: "--cascade"
+        description: "Cascade deletion of dependent resources"
+    related: ["kubectl apply", "kubectl patch", "kubectl create"]
+
+  # Cluster Management
+  - name: "kubectl cluster-info"
+    shortDesc: "Display cluster information"
+    syntax: "kubectl cluster-info [flags]"
+    tags: ["cluster", "info", "admin"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl cluster-info"
+        description: "Display addresses of master and services"
+      - code: "kubectl cluster-info dump"
+        description: "Dump cluster state to stdout for debugging"
+      - code: "kubectl cluster-info dump --output-directory=/tmp/cluster-state"
+        description: "Save cluster state to directory"
+    notes:
+      - "Shows Kubernetes master and DNS service endpoints"
+      - "Dump command produces extensive diagnostic information"
+      - "Useful for verifying cluster connectivity"
+    options:
+      - flag: "dump"
+        description: "Dump cluster state for debugging"
+      - flag: "--output-directory"
+        description: "Directory to save cluster dump"
+    related: ["kubectl config view", "kubectl get nodes", "kubectl version"]
+
+  - name: "kubectl get nodes"
+    shortDesc: "List nodes in the cluster"
+    syntax: "kubectl get nodes [flags]"
+    tags: ["cluster", "nodes", "query"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl get nodes"
+        description: "List all nodes with status and roles"
+      - code: "kubectl get nodes -o wide"
+        description: "Show additional details including IPs and OS"
+      - code: "kubectl get nodes --show-labels"
+        description: "Display all node labels"
+    notes:
+      - "Shows node status: Ready, NotReady, SchedulingDisabled"
+      - "Node roles are determined by labels (master, worker)"
+      - "Use describe for detailed node information"
+    options:
+      - flag: "-o, --output"
+        description: "Output format: wide|json|yaml"
+      - flag: "--show-labels"
+        description: "Show all labels for each node"
+      - flag: "-l, --selector"
+        description: "Filter nodes by label selector"
+    related: ["kubectl describe node", "kubectl top node", "kubectl cordon"]
+
+  - name: "kubectl top"
+    shortDesc: "Display resource usage (CPU/Memory) for nodes or pods"
+    syntax: "kubectl top <node|pod> [flags]"
+    tags: ["monitoring", "metrics", "performance"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl top nodes"
+        description: "Show CPU and memory usage for all nodes"
+      - code: "kubectl top pods"
+        description: "Show resource usage for pods in current namespace"
+      - code: "kubectl top pod nginx-pod --containers"
+        description: "Show resource usage per container in a pod"
+    notes:
+      - "Requires metrics-server to be installed in the cluster"
+      - "Shows current usage, not requests or limits"
+      - "Useful for identifying resource-intensive workloads"
+    options:
+      - flag: "--containers"
+        description: "Show metrics for containers within pods"
+      - flag: "-l, --selector"
+        description: "Filter pods by label selector"
+      - flag: "--all-namespaces, -A"
+        description: "Show metrics across all namespaces"
+    related: ["kubectl describe", "kubectl get", "kubectl autoscale"]
+
+  - name: "kubectl cordon"
+    shortDesc: "Mark node as unschedulable"
+    syntax: "kubectl cordon <node> [flags]"
+    tags: ["nodes", "maintenance", "admin"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl cordon worker-node-01"
+        description: "Mark node as unschedulable for new pods"
+      - code: "kubectl cordon node-1 node-2"
+        description: "Cordon multiple nodes at once"
+    notes:
+      - "Prevents new pods from being scheduled on the node"
+      - "Existing pods continue running (use drain to evict them)"
+      - "Useful for node maintenance preparation"
+    options:
+      - flag: "-l, --selector"
+        description: "Select nodes using label selector"
+    related: ["kubectl uncordon", "kubectl drain", "kubectl get nodes"]
+
+  - name: "kubectl uncordon"
+    shortDesc: "Mark node as schedulable"
+    syntax: "kubectl uncordon <node> [flags]"
+    tags: ["nodes", "maintenance", "admin"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl uncordon worker-node-01"
+        description: "Mark node as schedulable again"
+      - code: "kubectl uncordon -l maintenance=done"
+        description: "Uncordon all nodes with specific label"
+    notes:
+      - "Reverses the effect of cordon command"
+      - "New pods can be scheduled on the node immediately"
+      - "Does not automatically reschedule pods"
+    options:
+      - flag: "-l, --selector"
+        description: "Select nodes using label selector"
+    related: ["kubectl cordon", "kubectl drain", "kubectl get nodes"]
+
+  - name: "kubectl drain"
+    shortDesc: "Drain node in preparation for maintenance"
+    syntax: "kubectl drain <node> [flags]"
+    tags: ["nodes", "maintenance", "admin"]
+    complexity: "advanced"
+    examples:
+      - code: "kubectl drain worker-node-01 --ignore-daemonsets"
+        description: "Drain node while ignoring DaemonSet pods"
+      - code: "kubectl drain worker-node-01 --force --delete-emptydir-data"
+        description: "Force drain including pods with local data"
+      - code: "kubectl drain worker-node-01 --grace-period=300"
+        description: "Drain with 5-minute grace period for pod termination"
+    notes:
+      - "Safely evicts all pods from the node and cordons it"
+      - "DaemonSet pods cannot be evicted (use --ignore-daemonsets)"
+      - "Pods with local storage require --delete-emptydir-data flag"
+    options:
+      - flag: "--ignore-daemonsets"
+        description: "Ignore DaemonSet-managed pods"
+      - flag: "--force"
+        description: "Force drain even if there are standalone pods"
+      - flag: "--delete-emptydir-data"
+        description: "Delete pods using emptyDir volumes"
+      - flag: "--grace-period"
+        description: "Period for pods to terminate gracefully (seconds)"
+    related: ["kubectl cordon", "kubectl uncordon", "kubectl delete"]
+
+  - name: "kubectl taint"
+    shortDesc: "Update taints on nodes"
+    syntax: "kubectl taint nodes <node> <key>=<value>:<effect> [flags]"
+    tags: ["nodes", "scheduling", "admin"]
+    complexity: "advanced"
+    examples:
+      - code: "kubectl taint nodes worker-01 key=value:NoSchedule"
+        description: "Add taint to prevent pod scheduling"
+      - code: "kubectl taint nodes worker-01 key=value:NoSchedule-"
+        description: "Remove taint from node (note the trailing dash)"
+      - code: "kubectl taint nodes worker-01 dedicated=gpu:NoSchedule"
+        description: "Taint node for dedicated GPU workloads"
+    notes:
+      - "Taints repel pods unless they have matching tolerations"
+      - "Effects: NoSchedule, PreferNoSchedule, NoExecute"
+      - "NoExecute evicts existing pods without toleration"
+    options:
+      - flag: "--overwrite"
+        description: "Allow overwriting existing taints"
+      - flag: "--all"
+        description: "Apply taint to all nodes"
+    related: ["kubectl label", "kubectl cordon", "kubectl get nodes"]
+
+  # Debugging & Troubleshooting
+  - name: "kubectl debug"
+    shortDesc: "Create debugging sessions for troubleshooting workloads"
+    syntax: "kubectl debug <pod> [flags]"
+    tags: ["debug", "troubleshoot", "pods"]
+    complexity: "advanced"
+    examples:
+      - code: "kubectl debug nginx-pod -it --image=busybox"
+        description: "Create debug container in running pod"
+      - code: "kubectl debug nginx-pod --copy-to=nginx-debug"
+        description: "Create copy of pod for debugging without affecting original"
+      - code: "kubectl debug node/worker-01 -it --image=ubuntu"
+        description: "Create privileged debug pod on specific node"
+    notes:
+      - "Ephemeral containers can be added to running pods"
+      - "Node debugging creates privileged pod with host access"
+      - "Requires Kubernetes 1.18+ for full functionality"
+    options:
+      - flag: "--image"
+        description: "Container image to use for debugging"
+      - flag: "--copy-to"
+        description: "Create a copy of the pod for debugging"
+      - flag: "-it"
+        description: "Interactive mode with TTY"
+      - flag: "--target"
+        description: "Target container to debug in multi-container pod"
+    related: ["kubectl exec", "kubectl logs", "kubectl describe"]
+
+  - name: "kubectl events"
+    shortDesc: "List events in the cluster"
+    syntax: "kubectl events [flags]"
+    tags: ["debug", "events", "monitoring"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl events"
+        description: "List events in current namespace"
+      - code: "kubectl events --all-namespaces"
+        description: "List events across all namespaces"
+      - code: "kubectl events --for pod/nginx-pod"
+        description: "Show events for specific resource"
+    notes:
+      - "Events are automatically cleaned up after ~1 hour"
+      - "Useful for troubleshooting recent issues"
+      - "Can filter by resource type and name"
+    options:
+      - flag: "--all-namespaces, -A"
+        description: "List events across all namespaces"
+      - flag: "--for"
+        description: "Filter events for specific resource"
+      - flag: "--watch, -w"
+        description: "Watch for new events"
+    related: ["kubectl describe", "kubectl logs", "kubectl get"]
+
+  - name: "kubectl explain"
+    shortDesc: "Get documentation for resource fields"
+    syntax: "kubectl explain <resource>[.field] [flags]"
+    tags: ["documentation", "info", "reference"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl explain pod"
+        description: "Show documentation for Pod resource"
+      - code: "kubectl explain pod.spec.containers"
+        description: "Show documentation for container specification"
+      - code: "kubectl explain deployment --recursive"
+        description: "Show all fields for Deployment resource"
+    notes:
+      - "Provides built-in API documentation"
+      - "Use dot notation to drill down into nested fields"
+      - "Recursive flag shows complete field hierarchy"
+    options:
+      - flag: "--recursive"
+        description: "Show all fields recursively"
+      - flag: "--api-version"
+        description: "Use specific API version"
+    related: ["kubectl api-resources", "kubectl describe", "kubectl get"]
+
+  - name: "kubectl diff"
+    shortDesc: "Show difference between current and proposed resource configuration"
+    syntax: "kubectl diff -f <filename> [flags]"
+    tags: ["validation", "comparison", "deployment"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl diff -f deployment.yaml"
+        description: "Preview changes before applying configuration"
+      - code: "kubectl diff -f ./configs/"
+        description: "Show diff for all configs in directory"
+    notes:
+      - "Shows what would change if you applied the configuration"
+      - "Useful for reviewing changes before deployment"
+      - "Exit code indicates if there are differences"
+    options:
+      - flag: "-f, --filename"
+        description: "Filename or directory containing configurations"
+      - flag: "-R, --recursive"
+        description: "Process directory recursively"
+    related: ["kubectl apply", "kubectl get", "kubectl explain"]
+
+  # Advanced Operations
+  - name: "kubectl api-resources"
+    shortDesc: "Print supported API resources on the server"
+    syntax: "kubectl api-resources [flags]"
+    tags: ["api", "reference", "info"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl api-resources"
+        description: "List all available resource types"
+      - code: "kubectl api-resources --namespaced=true"
+        description: "List only namespaced resources"
+      - code: "kubectl api-resources --api-group=apps"
+        description: "List resources in specific API group"
+    notes:
+      - "Shows short names, API groups, and whether resources are namespaced"
+      - "Useful for discovering available resources"
+      - "Output includes preferred API version for each resource"
+    options:
+      - flag: "--namespaced"
+        description: "Filter by namespaced resources (true/false)"
+      - flag: "--api-group"
+        description: "Limit to specific API group"
+      - flag: "-o, --output"
+        description: "Output format: wide|name"
+    related: ["kubectl api-versions", "kubectl explain", "kubectl get"]
+
+  - name: "kubectl api-versions"
+    shortDesc: "Print supported API versions on the server"
+    syntax: "kubectl api-versions [flags]"
+    tags: ["api", "reference", "info"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl api-versions"
+        description: "List all available API versions"
+      - code: "kubectl api-versions | grep apps"
+        description: "Find API versions for apps group"
+    notes:
+      - "Shows format: group/version or just version for core APIs"
+      - "Used to verify which API versions are available"
+      - "Important for writing compatible manifests"
+    options:
+      - flag: ""
+        description: "No additional flags commonly used"
+    related: ["kubectl api-resources", "kubectl explain", "kubectl version"]
+
+  - name: "kubectl version"
+    shortDesc: "Print client and server version information"
+    syntax: "kubectl version [flags]"
+    tags: ["info", "version", "cluster"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl version"
+        description: "Show both client and server versions"
+      - code: "kubectl version --short"
+        description: "Show versions in short format"
+      - code: "kubectl version --client"
+        description: "Show only client version"
+    notes:
+      - "Client and server versions should be within one minor version"
+      - "Shows Git commit and build date information"
+      - "Use --client to avoid server connection"
+    options:
+      - flag: "--short"
+        description: "Print version in short format"
+      - flag: "--client"
+        description: "Show only client version"
+      - flag: "-o, --output"
+        description: "Output format: json|yaml"
+    related: ["kubectl cluster-info", "kubectl api-versions", "kubectl get"]
+
+  - name: "kubectl wait"
+    shortDesc: "Wait for a specific condition on resources"
+    syntax: "kubectl wait <resource> <name> --for=<condition> [flags]"
+    tags: ["automation", "sync", "deployment"]
+    complexity: "advanced"
+    examples:
+      - code: "kubectl wait --for=condition=ready pod/nginx-pod"
+        description: "Wait until pod is ready"
+      - code: "kubectl wait --for=delete pod/nginx-pod --timeout=60s"
+        description: "Wait for pod deletion with timeout"
+      - code: "kubectl wait --for=condition=available deployment/nginx"
+        description: "Wait for deployment to become available"
+    notes:
+      - "Useful in scripts and automation workflows"
+      - "Returns immediately if condition is already met"
+      - "Fails if timeout is reached before condition is satisfied"
+    options:
+      - flag: "--for"
+        description: "Condition to wait for: condition=<type>|delete"
+      - flag: "--timeout"
+        description: "Maximum time to wait (default 30s)"
+      - flag: "-l, --selector"
+        description: "Wait for resources matching label selector"
+    related: ["kubectl rollout status", "kubectl get", "kubectl apply"]
+
+  - name: "kubectl auth can-i"
+    shortDesc: "Check whether an action is allowed"
+    syntax: "kubectl auth can-i <verb> <resource> [flags]"
+    tags: ["security", "rbac", "permissions"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl auth can-i create pods"
+        description: "Check if you can create pods"
+      - code: "kubectl auth can-i delete deployments --namespace=production"
+        description: "Check permissions in specific namespace"
+      - code: "kubectl auth can-i '*' '*' --all-namespaces"
+        description: "Check if you have cluster-admin privileges"
+    notes:
+      - "Returns exit code 0 if allowed, 1 if denied"
+      - "Checks RBAC permissions for current user"
+      - "Use --as to check permissions for other users"
+    options:
+      - flag: "--namespace, -n"
+        description: "Check permissions in specific namespace"
+      - flag: "--all-namespaces, -A"
+        description: "Check cluster-wide permissions"
+      - flag: "--as"
+        description: "Check permissions as different user"
+    related: ["kubectl create role", "kubectl create rolebinding", "kubectl get"]
+
+  - name: "kubectl apply -k"
+    shortDesc: "Apply resources from a kustomization directory"
+    syntax: "kubectl apply -k <directory> [flags]"
+    tags: ["kustomize", "deployment", "configuration"]
+    complexity: "advanced"
+    examples:
+      - code: "kubectl apply -k ./overlays/production"
+        description: "Apply kustomization from production overlay"
+      - code: "kubectl apply -k https://github.com/user/repo/config?ref=v1.0"
+        description: "Apply kustomization from remote repository"
+      - code: "kubectl diff -k ./base"
+        description: "Preview kustomization changes before applying"
+    notes:
+      - "Kustomize allows customizing raw YAML without templating"
+      - "Supports overlays for environment-specific configurations"
+      - "Requires kustomization.yaml file in the directory"
+    options:
+      - flag: "-k, --kustomize"
+        description: "Directory containing kustomization.yaml"
+      - flag: "--dry-run"
+        description: "Preview without applying"
+    related: ["kubectl apply", "kubectl diff", "kubectl delete -k"]
+
+  - name: "kubectl create secret"
+    shortDesc: "Create a secret using specified subcommand"
+    syntax: "kubectl create secret <type> <name> [flags]"
+    tags: ["secrets", "security", "configuration"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl create secret generic db-password --from-literal=password=mysecret"
+        description: "Create generic secret from literal value"
+      - code: "kubectl create secret generic app-config --from-file=config.json"
+        description: "Create secret from file"
+      - code: "kubectl create secret docker-registry regcred --docker-server=registry.io --docker-username=user --docker-password=pass"
+        description: "Create Docker registry authentication secret"
+    notes:
+      - "Secret types: generic, docker-registry, tls"
+      - "Data is base64 encoded, not encrypted at rest by default"
+      - "Use from-file or from-literal to populate secret data"
+    options:
+      - flag: "--from-literal"
+        description: "Specify key-value pair directly"
+      - flag: "--from-file"
+        description: "Create secret from file(s)"
+      - flag: "--dry-run"
+        description: "Preview secret without creating it"
+    related: ["kubectl create configmap", "kubectl get secrets", "kubectl describe secret"]
+
+  - name: "kubectl create configmap"
+    shortDesc: "Create a configmap from local file, directory, or literal value"
+    syntax: "kubectl create configmap <name> [flags]"
+    tags: ["configmap", "configuration", "storage"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl create configmap app-config --from-literal=env=production"
+        description: "Create configmap from literal values"
+      - code: "kubectl create configmap app-config --from-file=config.properties"
+        description: "Create configmap from file"
+      - code: "kubectl create configmap nginx-config --from-file=./configs/"
+        description: "Create configmap from all files in directory"
+    notes:
+      - "ConfigMaps store non-confidential configuration data"
+      - "Can be mounted as volumes or exposed as environment variables"
+      - "Maximum size is 1MB per ConfigMap"
+    options:
+      - flag: "--from-literal"
+        description: "Specify key-value pair directly"
+      - flag: "--from-file"
+        description: "Create from file(s) or directory"
+      - flag: "--from-env-file"
+        description: "Create from env file format"
+    related: ["kubectl create secret", "kubectl get configmaps", "kubectl describe configmap"]
+
+  - name: "kubectl attach"
+    shortDesc: "Attach to a running container"
+    syntax: "kubectl attach <pod> [flags]"
+    tags: ["pods", "debug", "interactive"]
+    complexity: "intermediate"
+    examples:
+      - code: "kubectl attach nginx-pod -it"
+        description: "Attach to pod with interactive terminal"
+      - code: "kubectl attach nginx-pod -c sidecar"
+        description: "Attach to specific container in multi-container pod"
+    notes:
+      - "Attaches to main process in container, not a new shell"
+      - "Different from exec which starts a new process"
+      - "Use -it flags for interactive terminal session"
+    options:
+      - flag: "-it"
+        description: "Interactive mode with TTY"
+      - flag: "-c, --container"
+        description: "Container name for multi-container pods"
+    related: ["kubectl exec", "kubectl logs", "kubectl run"]
+
+  - name: "kubectl get all"
+    shortDesc: "List many resource types in a namespace"
+    syntax: "kubectl get all [flags]"
+    tags: ["query", "resources", "overview"]
+    complexity: "beginner"
+    examples:
+      - code: "kubectl get all"
+        description: "List common resources in current namespace"
+      - code: "kubectl get all --all-namespaces"
+        description: "List resources across all namespaces"
+      - code: "kubectl get all -l app=nginx"
+        description: "List resources matching label selector"
+    notes:
+      - "Does not include all resource types (e.g., secrets, configmaps)"
+      - "Includes pods, services, deployments, replicasets, etc."
+      - "Useful for getting quick overview of namespace"
+    options:
+      - flag: "--all-namespaces, -A"
+        description: "List across all namespaces"
+      - flag: "-l, --selector"
+        description: "Filter by label selector"
+      - flag: "-o, --output"
+        description: "Output format"
+    related: ["kubectl get", "kubectl describe", "kubectl api-resources"]

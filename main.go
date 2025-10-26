@@ -4,14 +4,18 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/term"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	startLogging()
 	// Parse command-line arguments
 	flag.Parse()
 	args := flag.Args()
@@ -32,11 +36,14 @@ func main() {
 
 func initialModel(filePath string) model {
 	// Initial viewport
-	vp := viewport.New(80, 24)
+	width, _, _ := term.GetSize(os.Stdout.Fd())
+	vp := viewport.New(width, 24)
 	vp.SetContent("Loading cheat sheet...")
-
+	tagVp := viewport.New(width, 3)
+	tagVp.SetContent("Loading tags...")
 	// Create initial model
 	m := model{
+		tagViewPort:    tagVp,
 		viewport:       vp,
 		currentCommand: 0,
 		showDetail:     false,
@@ -67,6 +74,26 @@ func loadCheatSheetMsg(filePath string) tea.Msg {
 	return cheatSheetLoadedMsg(sheet)
 }
 
+// Return a list of unique tags from commands
+func UniqueTags(commands []Command) []string {
+	tagSet := make(map[string]struct{})
+	for _, cmd := range commands {
+		for _, tag := range cmd.Tags {
+			tagSet[tag] = struct{}{}
+		}
+	}
+	var tags []string
+	for tag := range tagSet {
+		tags = append(tags, tag)
+	}
+	sort.Slice(tags, func(i, j int) bool {
+		return tags[i] < tags[j]
+	})
+	all := []string{"all"}
+	tags = append(all, tags...)
+	return tags
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -89,7 +116,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.showDetail {
 				// Go back to command list view
 				m.showDetail = false
-				content := RenderCommandList(m.cheatSheet, m.currentCommand)
+				content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
 				m.viewport.SetContent(content)
 				m.viewport.GotoTop()
 			}
@@ -100,12 +127,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.currentCommand > 0 {
 					m.currentCommand--
 					// Update the content to reflect the new selection
-					content := RenderCommandList(m.cheatSheet, m.currentCommand)
+					content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
 					m.viewport.SetContent(content)
 				}
 			} else {
 				// Scroll up in the viewport
-				m.viewport.LineUp(1)
+				m.viewport.ScrollUp(1)
 			}
 
 		case key.Matches(msg, keys.Down):
@@ -114,30 +141,72 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.currentCommand < len(m.commands)-1 {
 					m.currentCommand++
 					// Update the content to reflect the new selection
-					content := RenderCommandList(m.cheatSheet, m.currentCommand)
+					content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
 					m.viewport.SetContent(content)
+
 				}
 			} else {
 				// Scroll down in the viewport
-				m.viewport.LineDown(1)
+				m.viewport.ScrollDown(1)
+			}
+
+		case key.Matches(msg, keys.Right):
+			if !m.showDetail {
+				// Navigate right on the tags
+				if m.currentTag < len(m.tagMenu) && m.currentTag < len(m.tagMenu)-1 {
+					m.currentTag++
+					content := lipgloss.Style(boxedViewportStyle).Render(RenderTagMenu(m.tagMenu, m.currentTag, m.width))
+					m.tagViewPort.SetContent(content)
+					content = RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+					m.viewport.SetContent(content)
+				}
+			} else {
+				m.tagViewPort.ScrollRight(10)
+			}
+		case key.Matches(msg, keys.Left):
+			if !m.showDetail {
+				// Navigate left on the tags
+				if m.currentTag > 0 {
+					m.currentTag--
+					logrus.Debugf("box size set: width=%d, height=%d", m.width, m.height)
+					content := lipgloss.Style(boxedViewportStyle).Render(RenderTagMenu(m.tagMenu, m.currentTag, m.width))
+					m.tagViewPort.SetContent(content)
+					content = RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+					m.viewport.SetContent(content)
+				}
+			} else {
+				m.tagViewPort.ScrollLeft(10)
 			}
 		}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		headerHeight := 4 // Reserve space for header/footer
+		logrus.Debugf("Window size changed: width=%d, height=%d", msg.Width, msg.Height)
+		headerHeight := 9 // Reserve space for header/footer
 		m.viewport.Width = msg.Width
 		m.viewport.Height = msg.Height - headerHeight
+		m.tagViewPort.Width = msg.Width
+
+		if m.tagMenu != nil && len(m.commands) > 0 {
+			content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+			m.viewport.SetContent(content)
+			tagsContent := lipgloss.Style(boxedViewportStyle).Render(RenderTagMenu(m.tagMenu, m.currentTag, m.width))
+			m.tagViewPort.SetContent(tagsContent)
+		}
 
 	case cheatSheetLoadedMsg:
 		// Handle the loaded cheat sheet
 		m.cheatSheet = CheatSheet(msg)
 		m.commands = m.cheatSheet.Commands
-
+		m.tagMenu = UniqueTags(m.commands)
+		m.currentTag = 0
 		// Update the view with the command list
+		logrus.Debugf("Window size set: width=%d, height=%d", m.width, m.height)
 		if len(m.commands) > 0 {
-			content := RenderCommandList(m.cheatSheet, m.currentCommand)
+			content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+			tagsContent := lipgloss.Style(boxedViewportStyle).Render(RenderTagMenu(m.tagMenu, m.currentTag, m.width))
+			m.tagViewPort.SetContent(tagsContent)
 			m.viewport.SetContent(content)
 		} else {
 			m.viewport.SetContent("No commands found in the cheat sheet.")
@@ -162,7 +231,7 @@ func (m model) View() string {
 	// Create a footer with help text
 	helpView := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#626262")).
-		Render("↑/↓: Navigate • Enter: View details • Esc: Back • q: Quit")
+		Render("↑/↓: Navigate Command •  ←/→ : Tag Filter • Enter: View details • Esc: Back • q: Quit")
 
 	// Create a header
 	var header string
@@ -182,6 +251,7 @@ func (m model) View() string {
 			Render(m.cheatSheet.Title)
 	}
 
+	logrus.Debug(m.tagMenu)
 	// Combine the parts
-	return fmt.Sprintf("%s\n\n%s\n\n%s", header, m.viewport.View(), helpView)
+	return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s", header, m.tagViewPort.View(), m.viewport.View(), helpView)
 }

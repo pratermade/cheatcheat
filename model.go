@@ -9,7 +9,10 @@ import (
 type model struct {
 	cheatSheet     CheatSheet
 	commands       []Command
+	tagMenu        []string
 	currentCommand int
+	currentTag     int
+	tagViewPort    viewport.Model
 	viewport       viewport.Model
 	width          int
 	height         int
@@ -25,6 +28,8 @@ type keyMap struct {
 	Back   key.Binding
 	Quit   key.Binding
 	Search key.Binding
+	Left   key.Binding
+	Right  key.Binding
 }
 
 var keys = keyMap{
@@ -51,5 +56,13 @@ var keys = keyMap{
 	Search: key.NewBinding(
 		key.WithKeys("/"),
 		key.WithHelp("/", "search"),
+	),
+	Left: key.NewBinding(
+		key.WithKeys("left", "h"),
+		key.WithHelp("←/h", "previous tag"),
+	),
+	Right: key.NewBinding(
+		key.WithKeys("right", "l"),
+		key.WithHelp("→/l", "next tag"),
 	),
 }

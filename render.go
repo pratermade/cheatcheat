@@ -2,13 +2,24 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sirupsen/logrus"
 )
 
 // Define styles
 var (
+	boxedViewportStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).         // Choose from NormalBorder(), RoundedBorder(), DoubleBorder(), etc.
+				BorderForeground(lipgloss.Color("#69C")). // Border color
+				Padding(0, 1).                            // Inner padding (vertical, horizontal)
+				BorderTop(true).
+				BorderLeft(true).
+				BorderRight(true).
+				BorderBottom(true)
+
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FAFAFA")).
@@ -61,8 +72,115 @@ var (
 			Padding(0, 2)
 )
 
+func RenderTagMenu(tags []string, selectedIndex int, termWidth int) string {
+
+	// Create a menu bar style
+	menuBarStyle := lipgloss.NewStyle().
+		Width(termWidth-4).
+		Padding(0, 1)
+
+	// Get the visible tags with proper styling and indicators
+	visibleTags := GetVisibleTags(tags, selectedIndex, termWidth)
+
+	// Join them horizontally
+	menu := lipgloss.JoinHorizontal(lipgloss.Top, visibleTags...)
+
+	logrus.Debugf("Rendered tag menu: %s (selected: %d)", menu, selectedIndex)
+	return menuBarStyle.Render(menu)
+}
+
+// GetVisibleTags returns the visible tags for a menu based on the selected index and available width
+// It returns the slice of styled tag strings (including any scroll indicators)
+func GetVisibleTags(tags []string, selectedIndex, termWidth int) []string {
+	// Ensure the selected index is within bounds
+	if selectedIndex < 0 {
+		selectedIndex = 0
+	} else if selectedIndex >= len(tags) {
+		selectedIndex = len(tags) - 1
+	}
+
+	// Calculate the total available width for tags
+	availableWidth := termWidth - 8 // Subtract some padding for the outer container
+
+	// We'll build our result as we go
+	var result []string
+	var currentWidth int
+
+	// We'll track which tags we've added
+	addedTags := make(map[int]bool)
+
+	// Always include the selected tag first to ensure it's visible
+	selectedTagStyle := selectedCommandStyle.MarginRight(1)
+	selectedTag := selectedTagStyle.Render(tags[selectedIndex])
+	selectedTagWidth := lipgloss.Width(selectedTag)
+
+	// Make sure we have room for the selected tag
+	if currentWidth+selectedTagWidth <= availableWidth {
+		result = append(result, selectedTag)
+		currentWidth += selectedTagWidth
+		addedTags[selectedIndex] = true
+	} else {
+		// If we can't even fit the selected tag, just return it alone
+		return []string{selectedTag}
+	}
+
+	// Now add tags to the left of the selected tag, starting from the closest one
+	for i := selectedIndex - 1; i >= 0; i-- {
+		normalTagStyle := normalCommandStyle.MarginRight(1)
+		styledTag := normalTagStyle.Render(tags[i])
+		tagWidth := lipgloss.Width(styledTag)
+
+		if currentWidth+tagWidth > availableWidth {
+			break
+		}
+
+		// Insert at beginning to maintain left-to-right order
+		result = append([]string{styledTag}, result...)
+		currentWidth += tagWidth
+		addedTags[i] = true
+	}
+
+	// Then add tags to the right of the selected tag
+	for i := selectedIndex + 1; i < len(tags); i++ {
+		normalTagStyle := normalCommandStyle.MarginRight(1)
+		styledTag := normalTagStyle.Render(tags[i])
+		tagWidth := lipgloss.Width(styledTag)
+
+		if currentWidth+tagWidth > availableWidth {
+			break
+		}
+
+		result = append(result, styledTag)
+		currentWidth += tagWidth
+		addedTags[i] = true
+	}
+
+	// Add left scroll indicator if needed - only if the first tag isn't shown
+	showLeftIndicator := !addedTags[0]
+	if showLeftIndicator && len(result) > 0 {
+		leftIndicator := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#777777")).
+			Render("« ")
+
+		// Insert at the beginning
+		result = append([]string{leftIndicator}, result...)
+	}
+
+	// Add right scroll indicator if needed - only if the last tag isn't shown
+	showRightIndicator := !addedTags[len(tags)-1]
+	if showRightIndicator && len(result) > 0 {
+		rightIndicator := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#777777")).
+			Render(" »")
+
+		result = append(result, rightIndicator)
+	}
+
+	return result
+}
+
 // RenderCommandList renders a styled list of commands with the current selection highlighted
-func RenderCommandList(sheet CheatSheet, selectedIdx int) string {
+func RenderCommandList(sheet CheatSheet, selectedIdx int, selectedTag string) string {
 	var b strings.Builder
 
 	// Description
@@ -71,6 +189,19 @@ func RenderCommandList(sheet CheatSheet, selectedIdx int) string {
 
 	// Commands
 	for i, cmd := range sheet.Commands {
+		if selectedTag != "all" {
+			// Check if the command has the selected tag
+			hasTag := false
+			for _, tag := range cmd.Tags {
+				if tag == selectedTag {
+					hasTag = true
+					break
+				}
+			}
+			if !hasTag {
+				continue // Skip this command as it doesn't have the selected tag
+			}
+		}
 		// Format the command number
 		cmdNum := commandNumberStyle.Render(fmt.Sprintf("%d.", i+1))
 
@@ -185,4 +316,16 @@ func RenderCommandDetail(cmd Command) string {
 	}
 
 	return b.String()
+}
+
+// function to append to a debug log file
+func Debug(entry string) {
+	f, err := os.OpenFile("debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	if _, err := f.WriteString(entry + "\n"); err != nil {
+		return
+	}
 }
