@@ -7,7 +7,7 @@ commands:
   - name: "kubectl get"
     shortDesc: "Display one or many resources"
     syntax: "kubectl get <resource> [name] [flags]"
-    tags: ["query", "resources", "info"]
+    tags: ["info"]
     complexity: "beginner"
     examples:
       - code: "kubectl get pods"
@@ -34,7 +34,7 @@ commands:
   - name: "kubectl describe"
     shortDesc: "Show detailed information about a specific resource"
     syntax: "kubectl describe <resource> <name> [flags]"
-    tags: ["query", "debug", "info"]
+    tags: ["info", "troubleshooting"]
     complexity: "beginner"
     examples:
       - code: "kubectl describe pod nginx-7848d4b86f-5xq2k"
@@ -57,7 +57,7 @@ commands:
   - name: "kubectl create"
     shortDesc: "Create a resource from a file or stdin"
     syntax: "kubectl create <resource> [flags]"
-    tags: ["create", "resources", "deployment"]
+    tags: ["deployment"]
     complexity: "beginner"
     examples:
       - code: "kubectl create deployment nginx --image=nginx:latest"
@@ -82,7 +82,7 @@ commands:
   - name: "kubectl apply"
     shortDesc: "Apply a configuration to a resource by filename or stdin"
     syntax: "kubectl apply -f <filename> [flags]"
-    tags: ["create", "update", "deployment"]
+    tags: ["deployment"]
     complexity: "beginner"
     examples:
       - code: "kubectl apply -f deployment.yaml"
@@ -109,7 +109,7 @@ commands:
   - name: "kubectl delete"
     shortDesc: "Delete resources by filenames, stdin, resources and names"
     syntax: "kubectl delete <resource> <name> [flags]"
-    tags: ["delete", "cleanup", "resources"]
+    tags: ["deployment"]
     complexity: "beginner"
     examples:
       - code: "kubectl delete pod nginx-7848d4b86f-5xq2k"
@@ -137,7 +137,7 @@ commands:
   - name: "kubectl run"
     shortDesc: "Create and run a particular image in a pod"
     syntax: "kubectl run <name> --image=<image> [flags]"
-    tags: ["pods", "create", "deployment"]
+    tags: ["deployment"]
     complexity: "beginner"
     examples:
       - code: "kubectl run nginx --image=nginx:latest"
@@ -164,7 +164,7 @@ commands:
   - name: "kubectl exec"
     shortDesc: "Execute a command in a container"
     syntax: "kubectl exec <pod> [flags] -- <command> [args]"
-    tags: ["pods", "debug", "troubleshoot"]
+    tags: ["troubleshooting"]
     complexity: "beginner"
     examples:
       - code: "kubectl exec nginx-pod -- ls /usr/share/nginx/html"
@@ -189,7 +189,7 @@ commands:
   - name: "kubectl logs"
     shortDesc: "Print the logs for a container in a pod"
     syntax: "kubectl logs <pod> [flags]"
-    tags: ["pods", "debug", "monitoring"]
+    tags: ["troubleshooting"]
     complexity: "beginner"
     examples:
       - code: "kubectl logs nginx-pod"
@@ -218,7 +218,7 @@ commands:
   - name: "kubectl port-forward"
     shortDesc: "Forward one or more local ports to a pod"
     syntax: "kubectl port-forward <pod> <local-port>:<pod-port> [flags]"
-    tags: ["networking", "debug", "access"]
+    tags: ["networking", "troubleshooting"]
     complexity: "intermediate"
     examples:
       - code: "kubectl port-forward pod/nginx-pod 8080:80"
@@ -241,7 +241,7 @@ commands:
   - name: "kubectl cp"
     shortDesc: "Copy files and directories to and from containers"
     syntax: "kubectl cp <source> <destination> [flags]"
-    tags: ["pods", "files", "transfer"]
+    tags: ["deployment"]
     complexity: "intermediate"
     examples:
       - code: "kubectl cp /tmp/foo nginx-pod:/tmp/bar"
@@ -265,7 +265,7 @@ commands:
   - name: "kubectl config view"
     shortDesc: "Display merged kubeconfig settings"
     syntax: "kubectl config view [flags]"
-    tags: ["config", "context", "cluster"]
+    tags: ["cluster", "info"]
     complexity: "beginner"
     examples:
       - code: "kubectl config view"
@@ -290,7 +290,7 @@ commands:
   - name: "kubectl config use-context"
     shortDesc: "Set the current-context in kubeconfig"
     syntax: "kubectl config use-context <context-name>"
-    tags: ["config", "context", "cluster"]
+    tags: ["cluster"]
     complexity: "beginner"
     examples:
       - code: "kubectl config use-context production"
@@ -309,7 +309,7 @@ commands:
   - name: "kubectl config get-contexts"
     shortDesc: "Display available contexts"
     syntax: "kubectl config get-contexts [flags]"
-    tags: ["config", "context", "info"]
+    tags: ["cluster", "info"]
     complexity: "beginner"
     examples:
       - code: "kubectl config get-contexts"
@@ -330,7 +330,7 @@ commands:
   - name: "kubectl config set-context"
     shortDesc: "Set a context entry in kubeconfig"
     syntax: "kubectl config set-context <context-name> [flags]"
-    tags: ["config", "context", "setup"]
+    tags: ["cluster", "setup"]
     complexity: "intermediate"
     examples:
       - code: "kubectl config set-context dev --namespace=development"
@@ -358,7 +358,7 @@ commands:
   - name: "kubectl scale"
     shortDesc: "Set a new size for a deployment, replica set, or replication controller"
     syntax: "kubectl scale <resource> <name> --replicas=<count> [flags]"
-    tags: ["scaling", "deployment", "replicas"]
+    tags: ["deployment"]
     complexity: "intermediate"
     examples:
       - code: "kubectl scale deployment nginx --replicas=3"
@@ -383,7 +383,7 @@ commands:
   - name: "kubectl rollout"
     shortDesc: "Manage the rollout of a resource"
     syntax: "kubectl rollout <subcommand> <resource> [flags]"
-    tags: ["deployment", "updates", "rollback"]
+    tags: ["deployment"]
     complexity: "intermediate"
     examples:
       - code: "kubectl rollout status deployment/nginx"
@@ -406,7 +406,7 @@ commands:
   - name: "kubectl set image"
     shortDesc: "Update image of a pod template"
     syntax: "kubectl set image <resource>/<name> <container>=<image> [flags]"
-    tags: ["deployment", "updates", "images"]
+    tags: ["deployment"]
     complexity: "intermediate"
     examples:
       - code: "kubectl set image deployment/nginx nginx=nginx:1.20"
@@ -431,7 +431,7 @@ commands:
   - name: "kubectl autoscale"
     shortDesc: "Auto-scale a deployment, replica set, or replication controller"
     syntax: "kubectl autoscale <resource> <name> --min=<min> --max=<max> [flags]"
-    tags: ["scaling", "automation", "hpa"]
+    tags: ["deployment", "advanced"]
     complexity: "advanced"
     examples:
       - code: "kubectl autoscale deployment nginx --min=2 --max=10 --cpu-percent=80"
@@ -455,7 +455,7 @@ commands:
   - name: "kubectl create namespace"
     shortDesc: "Create a new namespace"
     syntax: "kubectl create namespace <name> [flags]"
-    tags: ["namespace", "create", "organization"]
+    tags: ["cluster"]
     complexity: "beginner"
     examples:
       - code: "kubectl create namespace development"
@@ -476,7 +476,7 @@ commands:
   - name: "kubectl get namespaces"
     shortDesc: "List all namespaces in the cluster"
     syntax: "kubectl get namespaces [flags]"
-    tags: ["namespace", "query", "info"]
+    tags: ["cluster", "info"]
     complexity: "beginner"
     examples:
       - code: "kubectl get namespaces"
@@ -500,7 +500,7 @@ commands:
   - name: "kubectl expose"
     shortDesc: "Expose a resource as a new Kubernetes service"
     syntax: "kubectl expose <resource> <name> --port=<port> [flags]"
-    tags: ["networking", "service", "expose"]
+    tags: ["networking"]
     complexity: "intermediate"
     examples:
       - code: "kubectl expose deployment nginx --port=80 --type=LoadBalancer"
@@ -527,7 +527,7 @@ commands:
   - name: "kubectl get services"
     shortDesc: "List services in a namespace"
     syntax: "kubectl get services [flags]"
-    tags: ["networking", "service", "query"]
+    tags: ["networking", "info"]
     complexity: "beginner"
     examples:
       - code: "kubectl get services"
@@ -552,7 +552,7 @@ commands:
   - name: "kubectl proxy"
     shortDesc: "Run a proxy to the Kubernetes API server"
     syntax: "kubectl proxy [flags]"
-    tags: ["networking", "api", "access"]
+    tags: ["networking", "advanced"]
     complexity: "intermediate"
     examples:
       - code: "kubectl proxy"
@@ -578,7 +578,7 @@ commands:
   - name: "kubectl label"
     shortDesc: "Update labels on a resource"
     syntax: "kubectl label <resource> <name> <key>=<value> [flags]"
-    tags: ["labels", "metadata", "organization"]
+    tags: ["cluster"]
     complexity: "intermediate"
     examples:
       - code: "kubectl label pods nginx-pod env=production"
@@ -603,7 +603,7 @@ commands:
   - name: "kubectl annotate"
     shortDesc: "Update annotations on a resource"
     syntax: "kubectl annotate <resource> <name> <key>=<value> [flags]"
-    tags: ["annotations", "metadata", "documentation"]
+    tags: ["cluster", "info"]
     complexity: "intermediate"
     examples:
       - code: "kubectl annotate pod nginx-pod description='Main web server'"
@@ -626,7 +626,7 @@ commands:
   - name: "kubectl patch"
     shortDesc: "Update fields of a resource using strategic merge patch"
     syntax: "kubectl patch <resource> <name> -p '<patch>' [flags]"
-    tags: ["update", "modify", "advanced"]
+    tags: ["deployment", "advanced"]
     complexity: "advanced"
     examples:
       - code: "kubectl patch deployment nginx -p '{\"spec\":{\"replicas\":3}}'"
@@ -651,7 +651,7 @@ commands:
   - name: "kubectl edit"
     shortDesc: "Edit a resource on the server"
     syntax: "kubectl edit <resource> <name> [flags]"
-    tags: ["update", "modify", "interactive"]
+    tags: ["deployment", "troubleshooting"]
     complexity: "intermediate"
     examples:
       - code: "kubectl edit deployment nginx"
@@ -674,7 +674,7 @@ commands:
   - name: "kubectl replace"
     shortDesc: "Replace a resource by filename or stdin"
     syntax: "kubectl replace -f <filename> [flags]"
-    tags: ["update", "replace", "deployment"]
+    tags: ["deployment"]
     complexity: "intermediate"
     examples:
       - code: "kubectl replace -f deployment.yaml"
@@ -700,7 +700,7 @@ commands:
   - name: "kubectl cluster-info"
     shortDesc: "Display cluster information"
     syntax: "kubectl cluster-info [flags]"
-    tags: ["cluster", "info", "admin"]
+    tags: ["cluster", "info"]
     complexity: "beginner"
     examples:
       - code: "kubectl cluster-info"
@@ -723,7 +723,7 @@ commands:
   - name: "kubectl get nodes"
     shortDesc: "List nodes in the cluster"
     syntax: "kubectl get nodes [flags]"
-    tags: ["cluster", "nodes", "query"]
+    tags: ["cluster", "info"]
     complexity: "beginner"
     examples:
       - code: "kubectl get nodes"
@@ -748,7 +748,7 @@ commands:
   - name: "kubectl top"
     shortDesc: "Display resource usage (CPU/Memory) for nodes or pods"
     syntax: "kubectl top <node|pod> [flags]"
-    tags: ["monitoring", "metrics", "performance"]
+    tags: ["troubleshooting"]
     complexity: "intermediate"
     examples:
       - code: "kubectl top nodes"
@@ -773,7 +773,7 @@ commands:
   - name: "kubectl cordon"
     shortDesc: "Mark node as unschedulable"
     syntax: "kubectl cordon <node> [flags]"
-    tags: ["nodes", "maintenance", "admin"]
+    tags: ["cluster"]
     complexity: "intermediate"
     examples:
       - code: "kubectl cordon worker-node-01"
@@ -792,7 +792,7 @@ commands:
   - name: "kubectl uncordon"
     shortDesc: "Mark node as schedulable"
     syntax: "kubectl uncordon <node> [flags]"
-    tags: ["nodes", "maintenance", "admin"]
+    tags: ["cluster"]
     complexity: "intermediate"
     examples:
       - code: "kubectl uncordon worker-node-01"
@@ -808,10 +808,11 @@ commands:
         description: "Select nodes using label selector"
     related: ["kubectl cordon", "kubectl drain", "kubectl get nodes"]
 
+
   - name: "kubectl drain"
     shortDesc: "Drain node in preparation for maintenance"
     syntax: "kubectl drain <node> [flags]"
-    tags: ["nodes", "maintenance", "admin"]
+    tags: ["cluster", "advanced"]
     complexity: "advanced"
     examples:
       - code: "kubectl drain worker-node-01 --ignore-daemonsets"
@@ -838,7 +839,7 @@ commands:
   - name: "kubectl taint"
     shortDesc: "Update taints on nodes"
     syntax: "kubectl taint nodes <node> <key>=<value>:<effect> [flags]"
-    tags: ["nodes", "scheduling", "admin"]
+    tags: ["cluster", "advanced"]
     complexity: "advanced"
     examples:
       - code: "kubectl taint nodes worker-01 key=value:NoSchedule"
@@ -862,7 +863,7 @@ commands:
   - name: "kubectl debug"
     shortDesc: "Create debugging sessions for troubleshooting workloads"
     syntax: "kubectl debug <pod> [flags]"
-    tags: ["debug", "troubleshoot", "pods"]
+    tags: ["troubleshooting", "advanced"]
     complexity: "advanced"
     examples:
       - code: "kubectl debug nginx-pod -it --image=busybox"
@@ -889,7 +890,7 @@ commands:
   - name: "kubectl events"
     shortDesc: "List events in the cluster"
     syntax: "kubectl events [flags]"
-    tags: ["debug", "events", "monitoring"]
+    tags: ["troubleshooting", "info"]
     complexity: "beginner"
     examples:
       - code: "kubectl events"
@@ -914,7 +915,7 @@ commands:
   - name: "kubectl explain"
     shortDesc: "Get documentation for resource fields"
     syntax: "kubectl explain <resource>[.field] [flags]"
-    tags: ["documentation", "info", "reference"]
+    tags: ["info"]
     complexity: "beginner"
     examples:
       - code: "kubectl explain pod"
@@ -937,7 +938,7 @@ commands:
   - name: "kubectl diff"
     shortDesc: "Show difference between current and proposed resource configuration"
     syntax: "kubectl diff -f <filename> [flags]"
-    tags: ["validation", "comparison", "deployment"]
+    tags: ["deployment", "troubleshooting"]
     complexity: "intermediate"
     examples:
       - code: "kubectl diff -f deployment.yaml"
@@ -959,7 +960,7 @@ commands:
   - name: "kubectl api-resources"
     shortDesc: "Print supported API resources on the server"
     syntax: "kubectl api-resources [flags]"
-    tags: ["api", "reference", "info"]
+    tags: ["info", "advanced"]
     complexity: "intermediate"
     examples:
       - code: "kubectl api-resources"
@@ -984,7 +985,7 @@ commands:
   - name: "kubectl api-versions"
     shortDesc: "Print supported API versions on the server"
     syntax: "kubectl api-versions [flags]"
-    tags: ["api", "reference", "info"]
+    tags: ["info", "advanced"]
     complexity: "intermediate"
     examples:
       - code: "kubectl api-versions"
@@ -1003,7 +1004,7 @@ commands:
   - name: "kubectl version"
     shortDesc: "Print client and server version information"
     syntax: "kubectl version [flags]"
-    tags: ["info", "version", "cluster"]
+    tags: ["info", "cluster"]
     complexity: "beginner"
     examples:
       - code: "kubectl version"
@@ -1028,7 +1029,7 @@ commands:
   - name: "kubectl wait"
     shortDesc: "Wait for a specific condition on resources"
     syntax: "kubectl wait <resource> <name> --for=<condition> [flags]"
-    tags: ["automation", "sync", "deployment"]
+    tags: ["deployment", "advanced"]
     complexity: "advanced"
     examples:
       - code: "kubectl wait --for=condition=ready pod/nginx-pod"
@@ -1053,7 +1054,7 @@ commands:
   - name: "kubectl auth can-i"
     shortDesc: "Check whether an action is allowed"
     syntax: "kubectl auth can-i <verb> <resource> [flags]"
-    tags: ["security", "rbac", "permissions"]
+    tags: ["cluster", "advanced"]
     complexity: "intermediate"
     examples:
       - code: "kubectl auth can-i create pods"
@@ -1078,7 +1079,7 @@ commands:
   - name: "kubectl apply -k"
     shortDesc: "Apply resources from a kustomization directory"
     syntax: "kubectl apply -k <directory> [flags]"
-    tags: ["kustomize", "deployment", "configuration"]
+    tags: ["deployment", "advanced"]
     complexity: "advanced"
     examples:
       - code: "kubectl apply -k ./overlays/production"
@@ -1101,7 +1102,7 @@ commands:
   - name: "kubectl create secret"
     shortDesc: "Create a secret using specified subcommand"
     syntax: "kubectl create secret <type> <name> [flags]"
-    tags: ["secrets", "security", "configuration"]
+    tags: ["cluster", "advanced"]
     complexity: "intermediate"
     examples:
       - code: "kubectl create secret generic db-password --from-literal=password=mysecret"
@@ -1126,7 +1127,7 @@ commands:
   - name: "kubectl create configmap"
     shortDesc: "Create a configmap from local file, directory, or literal value"
     syntax: "kubectl create configmap <name> [flags]"
-    tags: ["configmap", "configuration", "storage"]
+    tags: ["cluster"]
     complexity: "intermediate"
     examples:
       - code: "kubectl create configmap app-config --from-literal=env=production"
@@ -1151,7 +1152,7 @@ commands:
   - name: "kubectl attach"
     shortDesc: "Attach to a running container"
     syntax: "kubectl attach <pod> [flags]"
-    tags: ["pods", "debug", "interactive"]
+    tags: ["troubleshooting"]
     complexity: "intermediate"
     examples:
       - code: "kubectl attach nginx-pod -it"
@@ -1172,7 +1173,7 @@ commands:
   - name: "kubectl get all"
     shortDesc: "List many resource types in a namespace"
     syntax: "kubectl get all [flags]"
-    tags: ["query", "resources", "overview"]
+    tags: ["info"]
     complexity: "beginner"
     examples:
       - code: "kubectl get all"

@@ -6,7 +6,7 @@ commands:
   - name: "git config"
     shortDesc: "Configure Git settings"
     syntax: "git config [--global|--local|--system] <key> <value>"
-    tags: ["setup", "configuration"]
+    tags: ["setup"]
     complexity: "beginner"
     examples:
       - code: "git config --global user.name \"John Doe\""
@@ -158,7 +158,7 @@ commands:
   - name: "git restore"
     shortDesc: "Restore working tree files"
     syntax: "git restore [<pathspec>...]"
-    tags: ["basic", "undo"]
+    tags: ["basic", "staging"]
     complexity: "intermediate"
     examples:
       - code: "git restore file.txt"
@@ -186,7 +186,7 @@ commands:
   - name: "git branch"
     shortDesc: "List, create, or delete branches"
     syntax: "git branch [options] [branch-name]"
-    tags: ["branch", "intermediate"]
+    tags: ["branching"]
     complexity: "intermediate"
     examples:
       - code: "git branch"
@@ -217,7 +217,7 @@ commands:
   - name: "git checkout"
     shortDesc: "Switch branches or restore working tree files"
     syntax: "git checkout [options] <branch-name> | -- <pathspec>..."
-    tags: ["branch", "navigation"]
+    tags: ["branching", "basic"]
     complexity: "intermediate"
     examples:
       - code: "git checkout feature"
@@ -246,7 +246,7 @@ commands:
   - name: "git switch"
     shortDesc: "Switch branches"
     syntax: "git switch [options] <branch-name>"
-    tags: ["branch", "navigation"]
+    tags: ["branching"]
     complexity: "intermediate"
     examples:
       - code: "git switch feature"
@@ -273,7 +273,7 @@ commands:
   - name: "git merge"
     shortDesc: "Join two or more development histories together"
     syntax: "git merge [options] <branch-name>..."
-    tags: ["branch", "integration"]
+    tags: ["branching"]
     complexity: "intermediate"
     examples:
       - code: "git merge feature"
@@ -302,7 +302,7 @@ commands:
   - name: "git rebase"
     shortDesc: "Reapply commits on top of another base"
     syntax: "git rebase [options] [<branch>]"
-    tags: ["branch", "integration", "advanced"]
+    tags: ["branching", "advanced"]
     complexity: "advanced"
     examples:
       - code: "git rebase main"
@@ -331,7 +331,7 @@ commands:
   - name: "git fetch"
     shortDesc: "Download objects and refs from another repository"
     syntax: "git fetch [options] [<repository> [<refspec>...]]"
-    tags: ["remote", "synchronization"]
+    tags: ["remote"]
     complexity: "intermediate"
     examples:
       - code: "git fetch origin"
@@ -346,4 +346,4 @@ commands:
       - "Safe operation that doesn't change your working directory"
     options:
       - flag: "--all"
-        description:
+        description: "Fetch from all remotes"
