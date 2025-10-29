@@ -94,6 +94,23 @@ func UniqueTags(commands []Command) []string {
 	return tags
 }
 
+func filterCommandsByTag(commands []Command, tag string) []Command {
+    if tag == "all" {
+        return commands
+    }
+
+    var filtered []Command
+    for _, cmd := range commands {
+        for _, t := range cmd.Tags {
+            if t == tag {
+                filtered = append(filtered, cmd)
+                break
+            }
+        }
+    }
+    return filtered
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -116,7 +133,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.showDetail {
 				// Go back to command list view
 				m.showDetail = false
-				content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+				content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 				m.viewport.SetContent(content)
 				m.viewport.GotoTop()
 			}
@@ -127,7 +144,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.currentCommand > 0 {
 					m.currentCommand--
 					// Update the content to reflect the new selection
-					content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+					content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 					m.viewport.SetContent(content)
 				}
 			} else {
@@ -141,7 +158,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.currentCommand < len(m.commands)-1 {
 					m.currentCommand++
 					// Update the content to reflect the new selection
-					content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+					content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 					m.viewport.SetContent(content)
 
 				}
@@ -153,11 +170,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, keys.Right):
 			if !m.showDetail {
 				// Navigate right on the tags
-				if m.currentTag < len(m.tagMenu) && m.currentTag < len(m.tagMenu)-1 {
+				if m.currentTag < len(m.tagMenu)-1 {
 					m.currentTag++
+					m.commands = filterCommandsByTag(m.cheatSheet.Commands, m.tagMenu[m.currentTag])
+					m.currentCommand = 0 // Reset the cursor
 					content := lipgloss.Style(boxedViewportStyle).Render(RenderTagMenu(m.tagMenu, m.currentTag, m.width))
 					m.tagViewPort.SetContent(content)
-					content = RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+					content = RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 					m.viewport.SetContent(content)
 				}
 			} else {
@@ -168,10 +187,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Navigate left on the tags
 				if m.currentTag > 0 {
 					m.currentTag--
+					m.commands = filterCommandsByTag(m.cheatSheet.Commands, m.tagMenu[m.currentTag])
+					m.currentCommand = 0 // Reset the cursor
 					logrus.Debugf("box size set: width=%d, height=%d", m.width, m.height)
 					content := lipgloss.Style(boxedViewportStyle).Render(RenderTagMenu(m.tagMenu, m.currentTag, m.width))
 					m.tagViewPort.SetContent(content)
-					content = RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+					content = RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 					m.viewport.SetContent(content)
 				}
 			} else {
@@ -189,7 +210,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tagViewPort.Width = msg.Width
 
 		if m.tagMenu != nil && len(m.commands) > 0 {
-			content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+			content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 			m.viewport.SetContent(content)
 			tagsContent := lipgloss.Style(boxedViewportStyle).Render(RenderTagMenu(m.tagMenu, m.currentTag, m.width))
 			m.tagViewPort.SetContent(tagsContent)
@@ -204,7 +225,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update the view with the command list
 		logrus.Debugf("Window size set: width=%d, height=%d", m.width, m.height)
 		if len(m.commands) > 0 {
-			content := RenderCommandList(m.cheatSheet, m.currentCommand, m.tagMenu[m.currentTag])
+			content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 			tagsContent := lipgloss.Style(boxedViewportStyle).Render(RenderTagMenu(m.tagMenu, m.currentTag, m.width))
 			m.tagViewPort.SetContent(tagsContent)
 			m.viewport.SetContent(content)

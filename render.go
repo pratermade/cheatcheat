@@ -180,28 +180,15 @@ func GetVisibleTags(tags []string, selectedIndex, termWidth int) []string {
 }
 
 // RenderCommandList renders a styled list of commands with the current selection highlighted
-func RenderCommandList(sheet CheatSheet, selectedIdx int, selectedTag string) string {
+func RenderCommandList(description string, commands []Command, selectedIdx int) string {
 	var b strings.Builder
 
 	// Description
-	b.WriteString(sheet.Description)
+	b.WriteString(description)
 	b.WriteString("\n\n")
 
 	// Commands
-	for i, cmd := range sheet.Commands {
-		if selectedTag != "all" {
-			// Check if the command has the selected tag
-			hasTag := false
-			for _, tag := range cmd.Tags {
-				if tag == selectedTag {
-					hasTag = true
-					break
-				}
-			}
-			if !hasTag {
-				continue // Skip this command as it doesn't have the selected tag
-			}
-		}
+	for i, cmd := range commands {
 		// Format the command number
 		cmdNum := commandNumberStyle.Render(fmt.Sprintf("%d.", i+1))
 
