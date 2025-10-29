@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -17,25 +18,31 @@ import (
 
 func main() {
 	startLogging()
-	// Parse command-line arguments
+
+	// Define command-line flags
+	cheatsheetDir := flag.String("dir", "cheatsheets", "Directory containing cheatsheet files")
 	flag.Parse()
 	args := flag.Args()
 
-	// Check if a filepath was provided
-	if len(args) < 1 {
-		fmt.Println("Please provide a path to a cheat sheet YAML file")
-		os.Exit(1)
+	// Create initial model based on whether a file path was provided
+	var m model
+	if len(args) >= 1 {
+		// File path provided - load it directly (backward compatible)
+		m = initialModel(args[0], *cheatsheetDir)
+	} else {
+		// No file path - show cheatsheet selector
+		m = initialModelWithSelector(*cheatsheetDir)
 	}
 
 	// Create and run the Bubble Tea program
-	p := tea.NewProgram(initialModel(args[0]), tea.WithAltScreen())
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running program: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func initialModel(filePath string) model {
+func initialModel(filePath string, cheatsheetDir string) model {
 	// Initial viewport
 	width, _, _ := term.GetSize(os.Stdout.Fd())
 	vp := viewport.New(width, 24)
@@ -44,17 +51,47 @@ func initialModel(filePath string) model {
 	tagVp.SetContent("Loading tags...")
 	// Create initial model
 	m := model{
-		tagViewPort:    tagVp,
-		viewport:       vp,
-		currentCommand: 0,
-		showDetail:     false,
+		tagViewPort:            tagVp,
+		viewport:               vp,
+		currentCommand:         0,
+		showDetail:             false,
+		showCheatsheetSelector: false,
+		cheatsheetDir:          cheatsheetDir,
 	}
 
 	// Load the cheat sheet in the Init function
 	return m
 }
 
+func initialModelWithSelector(cheatsheetDir string) model {
+	// Initial viewport
+	width, _, _ := term.GetSize(os.Stdout.Fd())
+	vp := viewport.New(width, 24)
+	vp.SetContent("Loading cheatsheets...")
+	tagVp := viewport.New(width, 3)
+	tagVp.SetContent("")
+	// Create initial model with selector enabled
+	m := model{
+		tagViewPort:            tagVp,
+		viewport:               vp,
+		currentCommand:         0,
+		currentCheatsheet:      0,
+		showDetail:             false,
+		showCheatsheetSelector: true,
+		cheatsheetDir:          cheatsheetDir,
+	}
+
+	return m
+}
+
 func (m model) Init() tea.Cmd {
+	if m.showCheatsheetSelector {
+		// Load list of cheatsheets
+		return func() tea.Msg {
+			return loadCheatsheetsMsg(m.cheatsheetDir)
+		}
+	}
+	// Load specific cheatsheet file
 	return func() tea.Msg {
 		return loadCheatSheetMsg(flag.Arg(0))
 	}
@@ -63,6 +100,7 @@ func (m model) Init() tea.Cmd {
 // Custom message types
 type errorMsg struct{ err error }
 type cheatSheetLoadedMsg CheatSheet
+type cheatsheetsLoadedMsg []string
 
 func (e errorMsg) Error() string { return e.err.Error() }
 
@@ -73,6 +111,15 @@ func loadCheatSheetMsg(filePath string) tea.Msg {
 		return errorMsg{err}
 	}
 	return cheatSheetLoadedMsg(sheet)
+}
+
+// Command to discover cheatsheets in a directory
+func loadCheatsheetsMsg(dir string) tea.Msg {
+	cheatsheets, err := DiscoverCheatsheets(dir)
+	if err != nil {
+		return errorMsg{err}
+	}
+	return cheatsheetsLoadedMsg(cheatsheets)
 }
 
 // Return a list of unique tags from commands
@@ -132,6 +179,35 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle cheatsheet selector mode
+		if m.showCheatsheetSelector {
+			switch {
+			case key.Matches(msg, keys.Quit):
+				return m, tea.Quit
+			case key.Matches(msg, keys.Up):
+				if m.currentCheatsheet > 0 {
+					m.currentCheatsheet--
+					content := RenderCheatsheetList(m.cheatsheets, m.currentCheatsheet)
+					m.viewport.SetContent(content)
+				}
+			case key.Matches(msg, keys.Down):
+				if m.currentCheatsheet < len(m.cheatsheets)-1 {
+					m.currentCheatsheet++
+					content := RenderCheatsheetList(m.cheatsheets, m.currentCheatsheet)
+					m.viewport.SetContent(content)
+				}
+			case key.Matches(msg, keys.Enter):
+				if len(m.cheatsheets) > 0 {
+					// Load the selected cheatsheet
+					filePath := filepath.Join(m.cheatsheetDir, m.cheatsheets[m.currentCheatsheet])
+					return m, func() tea.Msg {
+						return loadCheatSheetMsg(filePath)
+					}
+				}
+			}
+			return m, nil
+		}
+
 		// Handle search mode input
 		if m.searchMode {
 			switch {
@@ -170,8 +246,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, keys.Quit):
 			return m, tea.Quit
 
+		case key.Matches(msg, keys.OpenSelector):
+			// Open cheatsheet selector
+			m.showCheatsheetSelector = true
+			m.currentCheatsheet = 0
+			return m, func() tea.Msg {
+				return loadCheatsheetsMsg(m.cheatsheetDir)
+			}
+
 		case key.Matches(msg, keys.Search):
-			if !m.showDetail {
+			if !m.showDetail && len(m.commands) > 0 {
 				// Enter search mode
 				m.searchMode = true
 				m.searchQuery = ""
@@ -282,12 +366,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tagViewPort.SetContent(tagsContent)
 		}
 
+	case cheatsheetsLoadedMsg:
+		// Handle the loaded cheatsheet list
+		m.cheatsheets = []string(msg)
+		m.currentCheatsheet = 0
+		content := RenderCheatsheetList(m.cheatsheets, m.currentCheatsheet)
+		m.viewport.SetContent(content)
+
 	case cheatSheetLoadedMsg:
 		// Handle the loaded cheat sheet
 		m.cheatSheet = CheatSheet(msg)
 		m.commands = m.cheatSheet.Commands
 		m.tagMenu = UniqueTags(m.commands)
 		m.currentTag = 0
+		m.showCheatsheetSelector = false // Exit selector mode
 		// Update the view with the command list
 		logrus.Debugf("Window size set: width=%d, height=%d", m.width, m.height)
 		if len(m.commands) > 0 {
@@ -315,14 +407,36 @@ func (m model) View() string {
 		return fmt.Sprintf("Error: %v\n\nPress q to quit.", m.err)
 	}
 
+	// Handle cheatsheet selector mode
+	if m.showCheatsheetSelector {
+		header := lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#FFFDF5")).
+			Background(lipgloss.Color("#2D9CDB")).
+			Padding(0, 1).
+			Render("Cheatsheet Selector")
+
+		helpText := "↑/↓: Navigate • Enter: Select • q: Quit"
+		helpView := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#626262")).
+			Render(helpText)
+
+		var parts []string
+		parts = append(parts, header)
+		parts = append(parts, m.viewport.View())
+		parts = append(parts, helpView)
+
+		return strings.Join(parts, "\n\n")
+	}
+
 	// Create help text based on current mode
 	var helpText string
 	if m.searchMode {
 		helpText = "Type to search • Enter: Apply • Esc: Cancel • q: Quit"
 	} else if m.searchActive {
-		helpText = "↑/↓: Navigate • Enter: View details • Esc: Clear search • q: Quit"
+		helpText = "↑/↓: Navigate • Enter: View details • Esc: Clear search • o: Open cheatsheet • q: Quit"
 	} else {
-		helpText = "↑/↓: Navigate • ←/→: Tag Filter • /: Search • Enter: View details • Esc: Back • q: Quit"
+		helpText = "↑/↓: Navigate • ←/→: Tag Filter • /: Search • Enter: View details • o: Open cheatsheet • Esc: Back • q: Quit"
 	}
 
 	helpView := lipgloss.NewStyle().

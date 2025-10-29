@@ -217,6 +217,45 @@ func RenderCommandList(description string, commands []Command, selectedIdx int) 
 	return b.String()
 }
 
+// RenderCheatsheetList renders a styled list of cheatsheet files with the current selection highlighted
+func RenderCheatsheetList(cheatsheets []string, selectedIdx int) string {
+	var b strings.Builder
+
+	// Title
+	b.WriteString(headingStyle.Render("Available Cheatsheets"))
+	b.WriteString("\n\n")
+
+	// Handle empty list
+	if len(cheatsheets) == 0 {
+		b.WriteString(noteStyle.Render("No cheatsheets available in the directory."))
+		b.WriteString("\n\n")
+		b.WriteString("Place .yaml cheatsheet files in the cheatsheets directory.")
+		return b.String()
+	}
+
+	// Cheatsheet list
+	for i, cheatsheet := range cheatsheets {
+		// Format the cheatsheet number
+		cheatsheetNum := commandNumberStyle.Render(fmt.Sprintf("%d.", i+1))
+
+		// Format the cheatsheet name
+		cheatsheetText := fmt.Sprintf("%s %s", cheatsheetNum, cheatsheet)
+
+		// Apply the appropriate style based on whether this is the selected cheatsheet
+		var styledCheatsheet string
+		if i == selectedIdx {
+			styledCheatsheet = selectedCommandStyle.Render(cheatsheetText)
+		} else {
+			styledCheatsheet = normalCommandStyle.Render(cheatsheetText)
+		}
+
+		b.WriteString(styledCheatsheet)
+		b.WriteString("\n\n")
+	}
+
+	return b.String()
+}
+
 // RenderCommandDetail renders styled details for a command with enhanced formatting
 func RenderCommandDetail(cmd Command) string {
 	var b strings.Builder

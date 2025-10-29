@@ -2,6 +2,9 @@ package main
 
 import (
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -44,4 +47,42 @@ func LoadCheatSheet(filename string) (CheatSheet, error) {
 	}
 	err = yaml.Unmarshal(data, &sheet)
 	return sheet, err
+}
+
+// DiscoverCheatsheets recursively scans a directory for .yaml files
+// and returns their relative paths sorted alphabetically
+func DiscoverCheatsheets(dir string) ([]string, error) {
+	var cheatsheets []string
+
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Only include .yaml files
+		if strings.HasSuffix(strings.ToLower(path), ".yaml") {
+			// Get relative path from base directory
+			relPath, err := filepath.Rel(dir, path)
+			if err != nil {
+				return err
+			}
+			cheatsheets = append(cheatsheets, relPath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort alphabetically for consistent display
+	sort.Strings(cheatsheets)
+
+	return cheatsheets, nil
 }

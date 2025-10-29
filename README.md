@@ -7,6 +7,7 @@ A lightweight Terminal User Interface (TUI) application for browsing interactive
 
 ## Features
 
+- **Cheatsheet Selector**: Browse and select from available cheatsheets at launch
 - **Interactive TUI**: Navigate cheatsheets with intuitive keyboard controls
 - **Tag-based Filtering**: Quickly filter commands by category tags
 - **Live Search**: Real-time case-insensitive search through command names
@@ -14,6 +15,7 @@ A lightweight Terminal User Interface (TUI) application for browsing interactive
 - **Vim-style Navigation**: Use hjkl or arrow keys to navigate
 - **YAML-based**: Easy to create and share cheatsheets
 - **Syntax Highlighting**: Color-coded output for better readability
+- **Switch on the Fly**: Open cheatsheet selector anytime with `o` key
 
 ## Installation
 
@@ -33,21 +35,47 @@ go install github.com/yourusername/cheatcheat@latest
 
 ## Quick Start
 
-Run cheatcheat with any YAML cheatsheet file:
+### Interactive Mode (Recommended)
+
+Launch without arguments to browse and select from available cheatsheets:
+
+```bash
+./cheatcheat
+```
+
+This will display all `.yaml` files in the `cheatsheets/` directory (including subdirectories). Use arrow keys to navigate and press Enter to select.
+
+### Direct Mode
+
+Run cheatcheat with a specific YAML cheatsheet file:
 
 ```bash
 ./cheatcheat cheatsheets/kubectl.yaml
+```
+
+### Custom Cheatsheet Directory
+
+Specify a different directory containing your cheatsheets:
+
+```bash
+./cheatcheat --dir /path/to/my/cheatsheets
 ```
 
 ## Usage
 
 ### Navigation
 
+**Cheatsheet Selector:**
+- `↑/k` or `↓/j` - Navigate through available cheatsheets
+- `Enter` - Load selected cheatsheet
+- `q` - Quit application
+
 **List View:**
 - `↑/k` or `↓/j` - Navigate through commands
 - `←/h` or `→/l` - Switch between tag filters
 - `/` - Activate search mode
 - `Enter` - View detailed information for selected command
+- `o` - Open cheatsheet selector
 - `q` - Quit application
 
 **Detail View:**
@@ -65,6 +93,7 @@ Run cheatcheat with any YAML cheatsheet file:
 - `↑/k` or `↓/j` - Navigate through filtered results
 - `Enter` - View detailed information for selected command
 - `Esc` - Clear search filter and return to full list
+- `o` - Open cheatsheet selector
 - `q` - Quit application
 
 ### Search
@@ -135,6 +164,10 @@ commands:
 See the included cheatsheets for reference:
 - `cheatsheets/kubectl.yaml` - Kubernetes CLI commands
 - `cheatsheets/git.yaml` - Git version control commands
+- `cheatsheets/databases/` - Database-related cheatsheets (MongoDB, MySQL)
+- `cheatsheets/linux/` - Linux command cheatsheets
+
+The selector will automatically discover all `.yaml` files in the `cheatsheets/` directory and its subdirectories.
 
 ## AI-Assisted Cheatsheet Creation
 

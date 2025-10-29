@@ -7,32 +7,37 @@ import (
 
 // Model for our application
 type model struct {
-	cheatSheet     CheatSheet
-	commands       []Command
-	tagMenu        []string
-	currentCommand int
-	currentTag     int
-	tagViewPort    viewport.Model
-	viewport       viewport.Model
-	width          int
-	height         int
-	showDetail     bool
-	searchMode     bool   // true when user is typing search query
-	searchQuery    string // current search input text
-	searchActive   bool   // true when search filter is applied
-	err            error  // Store any error that occurs
+	cheatSheet            CheatSheet
+	commands              []Command
+	tagMenu               []string
+	currentCommand        int
+	currentTag            int
+	tagViewPort           viewport.Model
+	viewport              viewport.Model
+	width                 int
+	height                int
+	showDetail            bool
+	searchMode            bool   // true when user is typing search query
+	searchQuery           string // current search input text
+	searchActive          bool   // true when search filter is applied
+	err                   error  // Store any error that occurs
+	cheatsheets           []string // list of discovered cheatsheet files
+	currentCheatsheet     int      // selected index in cheatsheet selector
+	showCheatsheetSelector bool    // true when showing cheatsheet selector
+	cheatsheetDir         string   // base directory for cheatsheets
 }
 
 // Define key mappings
 type keyMap struct {
-	Up     key.Binding
-	Down   key.Binding
-	Enter  key.Binding
-	Back   key.Binding
-	Quit   key.Binding
-	Search key.Binding
-	Left   key.Binding
-	Right  key.Binding
+	Up           key.Binding
+	Down         key.Binding
+	Enter        key.Binding
+	Back         key.Binding
+	Quit         key.Binding
+	Search       key.Binding
+	Left         key.Binding
+	Right        key.Binding
+	OpenSelector key.Binding
 }
 
 var keys = keyMap{
@@ -67,5 +72,9 @@ var keys = keyMap{
 	Right: key.NewBinding(
 		key.WithKeys("right", "l"),
 		key.WithHelp("→/l", "next tag"),
+	),
+	OpenSelector: key.NewBinding(
+		key.WithKeys("o"),
+		key.WithHelp("o", "open cheatsheet"),
 	),
 }
