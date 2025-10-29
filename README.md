@@ -1,9 +1,126 @@
 # cheatcheat
-Cheatsheet manager and tui
+
+A lightweight Terminal User Interface (TUI) application for browsing interactive command cheatsheets. Built with Go and Bubble Tea, cheatcheat helps you quickly reference commands, options, and examples without leaving your terminal.
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)
+
+## Features
+
+- **Interactive TUI**: Navigate cheatsheets with intuitive keyboard controls
+- **Tag-based Filtering**: Quickly filter commands by category tags
+- **Detailed Command View**: See syntax, examples, options, and notes for each command
+- **Vim-style Navigation**: Use hjkl or arrow keys to navigate
+- **YAML-based**: Easy to create and share cheatsheets
+- **Syntax Highlighting**: Color-coded output for better readability
+
+## Installation
+
+### From Source
+
+```bash
+git clone https://github.com/yourusername/cheatcheat.git
+cd cheatcheat
+go build -o cheatcheat
+```
+
+### Using Go Install
+
+```bash
+go install github.com/yourusername/cheatcheat@latest
+```
+
+## Quick Start
+
+Run cheatcheat with any YAML cheatsheet file:
+
+```bash
+./cheatcheat cheatsheets/kubectl.yaml
+```
+
+## Usage
+
+### Navigation
+
+**List View:**
+- `↑/k` or `↓/j` - Navigate through commands
+- `←/h` or `→/l` - Switch between tag filters
+- `Enter` - View detailed information for selected command
+- `q` - Quit application
+
+**Detail View:**
+- `↑/k` or `↓/j` - Scroll through command details
+- `Esc` - Return to command list
+- `q` - Quit application
+
+### Tag Filtering
+
+The tag menu at the top shows all available tags from your cheatsheet. Use `←/h` and `→/l` to switch between tags:
+- Select "all" to see all commands
+- Select specific tags to filter commands by category
+- Indicators (< >) show when there are more tags to scroll through
+
+## Creating Cheatsheets
+
+Cheatsheets are defined in YAML format. Here's the structure:
+
+```yaml
+title: "Tool Name Cheat Sheet"
+description: "Brief description of the tool"
+category: "Category Name"
+
+commands:
+  - name: "command-name"
+    shortDesc: "Brief one-line description"
+    syntax: "command [options] <args>"
+    tags: ["tag1", "tag2"]
+    complexity: "beginner"  # or "intermediate", "advanced"
+    examples:
+      - code: "command --flag value"
+        description: "What this example does"
+      - code: "command --other-flag"
+        description: "Another example"
+    notes:
+      - "Important note about the command"
+      - "Tips or caveats to remember"
+    options:
+      - flag: "--flag-name"
+        description: "What this flag does"
+      - flag: "-f, --flag"
+        description: "Short and long form"
+    related: ["related-command", "another-command"]
+```
+
+### Required Fields
+
+- `name`: Command name
+- `shortDesc`: Brief description
+- `syntax`: Command syntax
+
+### Optional Fields
+
+- `tags`: Array of category tags (enables filtering)
+- `complexity`: Difficulty level indicator
+- `examples`: Code examples with descriptions
+- `notes`: Important information and tips
+- `options`: Command flags and options
+- `related`: Related commands for reference
+
+### Example Cheatsheet
+
+See the included cheatsheets for reference:
+- `cheatsheets/kubectl.yaml` - Kubernetes CLI commands
+- `cheatsheets/git.yaml` - Git version control commands
+
+## AI-Assisted Cheatsheet Creation
+
+You can use AI assistants to generate comprehensive cheatsheets. Here's a prompt template:
+
+```
 Please create a comprehensive cheat sheet in YAML format for [TOOL/TECHNOLOGY] with the following structure:
 
 title: "[TITLE]"
-description: "[BRIEF DESCRIPTION OF THE TOOL]"
+description: "[BRIEF DESCRIPTION]"
 category: "[CATEGORY]"
 
 For each command, include:
@@ -17,51 +134,74 @@ For each command, include:
 - options: The most important flags or options with descriptions
 - related: Other related commands
 
-Please organize the commands into logical groups based on functionality, and ensure the tags are consistent to enable proper grouping in my TUI application.
+Organize commands into logical groups and use consistent tags for proper filtering.
+```
 
-For reference, here's an example of a properly formatted command:
+**Tips for better results:**
+1. Be specific about which aspects of the tool to focus on
+2. Mention preferred tag categories
+3. Specify the desired comprehensiveness level
+4. Request YAML validation
 
-```yaml
-commands:
-  - name: "git clone"
-    shortDesc: "Clone a repository into a new directory"
-    syntax: "git clone <repository> [directory]"
-    tags: ["setup", "repository"]
-    complexity: "beginner"
-    examples:
-      - code: "git clone https://github.com/user/repo.git"
-        description: "Clone a repository into a directory named after the repository"
-      - code: "git clone --depth=1 https://github.com/user/repo.git"
-        description: "Create a shallow clone with only the latest revision"
-    notes:
-      - "Clones the repository and creates remote-tracking branches"
-      - "Automatically sets up the 'origin' remote"
-    options:
-      - flag: "--depth=<depth>"
-        description: "Create a shallow clone with limited revision history"
-      - flag: "--branch, -b <branch>"
-        description: "Clone the specified branch instead of the default"
-    related: ["git init", "git remote"]
+## Development
 
+### Building
 
+```bash
+go build -o cheatcheat
+```
 
-## How to Use This Prompt
+### Running with Debug Logging
 
-1. Copy the entire prompt above.
-2. Replace `[TOOL/TECHNOLOGY]` with the specific tool you want a cheat sheet for (e.g., Docker, SQL, Vim, etc.)
-3. Replace `[TITLE]` with a descriptive title for the cheat sheet.
-4. Replace `[BRIEF DESCRIPTION OF THE TOOL]` with a short description.
-5. Replace `[CATEGORY]` with an appropriate category (e.g., "Developer Tools", "Database", "Editor").
-6. Share this with ChatGPT or another AI assistant.
+```bash
+LogLevel=debug ./cheatcheat cheatsheets/kubectl.yaml
+```
 
-## Tips for Getting Better Results
+Debug logs are written to `logs/application_YYYY-MM-DD.log`.
 
-1. **Be Specific**: Mention particular aspects of the tool you want to focus on.
-2. **Specify Tag Categories**: If you have particular tag groups in mind, mention them.
-3. **Request Size**: Specify if you want a small, medium, or comprehensive cheat sheet.
-4. **Ask for Validation**: Request that the AI validate the YAML format to ensure it will parse correctly.
+### Running Tests
 
-Example usage:
-"Please create a comprehensive cheat sheet in YAML format for Docker with a focus on container management and networking..."
+```bash
+go test ./...
+go test -v ./...        # verbose output
+go test -cover ./...    # with coverage report
+```
 
-The resulting YAML can be saved directly to a file and used with your TUI cheat sheet application.
+## Architecture
+
+cheatcheat follows the Model-View-Update (MVU) pattern:
+
+- **Model** (`model.go`): Application state
+- **Update** (`main.go`): Event handling and state transitions
+- **View** (`main.go`, `render.go`): UI rendering
+
+Key components:
+- `parsing.go`: YAML deserialization
+- `render.go`: UI styling and layout
+- `logging.go`: Debug logging utilities
+
+## Dependencies
+
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea) - TUI framework
+- [Bubbles](https://github.com/charmbracelet/bubbles) - TUI components
+- [Lipgloss](https://github.com/charmbracelet/lipgloss) - Terminal styling
+- [yaml.v3](https://gopkg.in/yaml.v3) - YAML parsing
+- [Logrus](https://github.com/sirupsen/logrus) - Structured logging
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+Built with the excellent [Charm](https://charm.sh) TUI libraries.
