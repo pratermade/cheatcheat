@@ -305,6 +305,22 @@ func RenderCommandDetail(cmd Command) string {
 	return b.String()
 }
 
+// RenderSearchBar renders the search input bar
+func RenderSearchBar(query string, width int) string {
+	searchStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#5AF78E")).
+		Bold(true)
+
+	cursorStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(lipgloss.Color("#5AF78E"))
+
+	// Create the search prompt with query and cursor
+	searchPrompt := searchStyle.Render("Search: ") + query + cursorStyle.Render(" ")
+
+	return searchPrompt
+}
+
 // function to append to a debug log file
 func Debug(entry string) {
 	f, err := os.OpenFile("debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

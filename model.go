@@ -17,7 +17,10 @@ type model struct {
 	width          int
 	height         int
 	showDetail     bool
-	err            error // Store any error that occurs
+	searchMode     bool   // true when user is typing search query
+	searchQuery    string // current search input text
+	searchActive   bool   // true when search filter is applied
+	err            error  // Store any error that occurs
 }
 
 // Define key mappings
@@ -46,7 +49,7 @@ var keys = keyMap{
 		key.WithHelp("enter", "view details"),
 	),
 	Back: key.NewBinding(
-		key.WithKeys("esc", "backspace"),
+		key.WithKeys("esc"),
 		key.WithHelp("esc", "back"),
 	),
 	Quit: key.NewBinding(

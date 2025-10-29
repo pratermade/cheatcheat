@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -111,14 +112,71 @@ func filterCommandsByTag(commands []Command, tag string) []Command {
     return filtered
 }
 
+func filterCommandsBySearch(commands []Command, query string) []Command {
+	if query == "" {
+		return commands
+	}
+
+	var filtered []Command
+	lowerQuery := strings.ToLower(query)
+	for _, cmd := range commands {
+		if strings.Contains(strings.ToLower(cmd.Name), lowerQuery) {
+			filtered = append(filtered, cmd)
+		}
+	}
+	return filtered
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle search mode input
+		if m.searchMode {
+			switch {
+			case key.Matches(msg, keys.Enter):
+				// Exit search mode (filtering already done live)
+				m.searchMode = false
+				m.searchActive = true
+				return m, nil
+			case key.Matches(msg, keys.Back):
+				// Cancel search
+				m.searchMode = false
+				m.searchQuery = ""
+				return m, nil
+			case msg.Type == tea.KeyBackspace:
+				// Remove last character from search query and filter live
+				if len(m.searchQuery) > 0 {
+					m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+				}
+				m.commands = filterCommandsBySearch(m.cheatSheet.Commands, m.searchQuery)
+				m.currentCommand = 0
+				content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
+				m.viewport.SetContent(content)
+				return m, nil
+			case msg.Type == tea.KeyRunes:
+				// Add character to search query and filter live
+				m.searchQuery += string(msg.Runes)
+				m.commands = filterCommandsBySearch(m.cheatSheet.Commands, m.searchQuery)
+				m.currentCommand = 0
+				content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
+				m.viewport.SetContent(content)
+				return m, nil
+			}
+		}
+
 		switch {
 		case key.Matches(msg, keys.Quit):
 			return m, tea.Quit
+
+		case key.Matches(msg, keys.Search):
+			if !m.showDetail {
+				// Enter search mode
+				m.searchMode = true
+				m.searchQuery = ""
+				return m, nil
+			}
 
 		case key.Matches(msg, keys.Enter):
 			if !m.showDetail && len(m.commands) > 0 {
@@ -130,7 +188,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case key.Matches(msg, keys.Back):
-			if m.showDetail {
+			if m.searchActive {
+				// Clear search filter and restore full list
+				m.searchActive = false
+				m.searchQuery = ""
+				m.commands = filterCommandsByTag(m.cheatSheet.Commands, m.tagMenu[m.currentTag])
+				m.currentCommand = 0
+				content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
+				m.viewport.SetContent(content)
+			} else if m.showDetail {
 				// Go back to command list view
 				m.showDetail = false
 				content := RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
@@ -168,8 +234,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case key.Matches(msg, keys.Right):
-			if !m.showDetail {
-				// Navigate right on the tags
+			if !m.showDetail && !m.searchActive {
+				// Navigate right on the tags (disabled when search is active)
 				if m.currentTag < len(m.tagMenu)-1 {
 					m.currentTag++
 					m.commands = filterCommandsByTag(m.cheatSheet.Commands, m.tagMenu[m.currentTag])
@@ -179,12 +245,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					content = RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 					m.viewport.SetContent(content)
 				}
-			} else {
+			} else if m.showDetail {
 				m.tagViewPort.ScrollRight(10)
 			}
 		case key.Matches(msg, keys.Left):
-			if !m.showDetail {
-				// Navigate left on the tags
+			if !m.showDetail && !m.searchActive {
+				// Navigate left on the tags (disabled when search is active)
 				if m.currentTag > 0 {
 					m.currentTag--
 					m.commands = filterCommandsByTag(m.cheatSheet.Commands, m.tagMenu[m.currentTag])
@@ -195,7 +261,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					content = RenderCommandList(m.cheatSheet.Description, m.commands, m.currentCommand)
 					m.viewport.SetContent(content)
 				}
-			} else {
+			} else if m.showDetail {
 				m.tagViewPort.ScrollLeft(10)
 			}
 		}
@@ -249,10 +315,19 @@ func (m model) View() string {
 		return fmt.Sprintf("Error: %v\n\nPress q to quit.", m.err)
 	}
 
-	// Create a footer with help text
+	// Create help text based on current mode
+	var helpText string
+	if m.searchMode {
+		helpText = "Type to search • Enter: Apply • Esc: Cancel • q: Quit"
+	} else if m.searchActive {
+		helpText = "↑/↓: Navigate • Enter: View details • Esc: Clear search • q: Quit"
+	} else {
+		helpText = "↑/↓: Navigate • ←/→: Tag Filter • /: Search • Enter: View details • Esc: Back • q: Quit"
+	}
+
 	helpView := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#626262")).
-		Render("↑/↓: Navigate Command •  ←/→ : Tag Filter • Enter: View details • Esc: Back • q: Quit")
+		Render(helpText)
 
 	// Create a header
 	var header string
@@ -273,6 +348,28 @@ func (m model) View() string {
 	}
 
 	logrus.Debug(m.tagMenu)
-	// Combine the parts
-	return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s", header, m.tagViewPort.View(), m.viewport.View(), helpView)
+
+	// Build the view based on current mode
+	var parts []string
+	parts = append(parts, header)
+
+	// Show search bar when in search mode, or search indicator when search is active
+	if m.searchMode {
+		searchBar := RenderSearchBar(m.searchQuery, m.width)
+		parts = append(parts, searchBar)
+	} else if m.searchActive {
+		searchIndicator := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#5AF78E")).
+			Render(fmt.Sprintf("🔍 Search: %s (%d results)", m.searchQuery, len(m.commands)))
+		parts = append(parts, searchIndicator)
+	} else {
+		// Show tag viewport only when not in search mode or active
+		parts = append(parts, m.tagViewPort.View())
+	}
+
+	// Add main viewport and help
+	parts = append(parts, m.viewport.View())
+	parts = append(parts, helpView)
+
+	return strings.Join(parts, "\n\n")
 }

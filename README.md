@@ -9,6 +9,7 @@ A lightweight Terminal User Interface (TUI) application for browsing interactive
 
 - **Interactive TUI**: Navigate cheatsheets with intuitive keyboard controls
 - **Tag-based Filtering**: Quickly filter commands by category tags
+- **Live Search**: Real-time case-insensitive search through command names
 - **Detailed Command View**: See syntax, examples, options, and notes for each command
 - **Vim-style Navigation**: Use hjkl or arrow keys to navigate
 - **YAML-based**: Easy to create and share cheatsheets
@@ -45,6 +46,7 @@ Run cheatcheat with any YAML cheatsheet file:
 **List View:**
 - `↑/k` or `↓/j` - Navigate through commands
 - `←/h` or `→/l` - Switch between tag filters
+- `/` - Activate search mode
 - `Enter` - View detailed information for selected command
 - `q` - Quit application
 
@@ -53,12 +55,34 @@ Run cheatcheat with any YAML cheatsheet file:
 - `Esc` - Return to command list
 - `q` - Quit application
 
+**Search Mode:**
+- Type to search - Results update in real-time as you type
+- `Backspace` - Delete characters from search query
+- `Enter` - Apply search filter and exit search mode
+- `Esc` - Cancel search and return to normal view
+
+**Search Active:**
+- `↑/k` or `↓/j` - Navigate through filtered results
+- `Enter` - View detailed information for selected command
+- `Esc` - Clear search filter and return to full list
+- `q` - Quit application
+
+### Search
+
+Press `/` to activate search mode and start typing to filter commands by name. The search is:
+- **Case-insensitive**: "git" matches "Git", "GIT", etc.
+- **Live**: Results update in real-time as you type
+- **Substring matching**: Searches anywhere in the command name
+
+When search is active, tag navigation is disabled. Press `Esc` to clear the search and return to tag-based filtering.
+
 ### Tag Filtering
 
 The tag menu at the top shows all available tags from your cheatsheet. Use `←/h` and `→/l` to switch between tags:
 - Select "all" to see all commands
 - Select specific tags to filter commands by category
-- Indicators (< >) show when there are more tags to scroll through
+- Indicators (« ») show when there are more tags to scroll through
+- Tag navigation is disabled when search is active
 
 ## Creating Cheatsheets
 
