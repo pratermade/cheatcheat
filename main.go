@@ -19,8 +19,14 @@ import (
 func main() {
 	startLogging()
 
+	// Get default directory from environment variable or use "cheatsheets"
+	defaultDir := os.Getenv("CHEATSHEET_DIR")
+	if defaultDir == "" {
+		defaultDir = "cheatsheets"
+	}
+
 	// Define command-line flags
-	cheatsheetDir := flag.String("dir", "cheatsheets", "Directory containing cheatsheet files")
+	cheatsheetDir := flag.String("dir", defaultDir, "Directory containing cheatsheet files")
 	flag.Parse()
 	args := flag.Args()
 

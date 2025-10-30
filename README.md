@@ -55,9 +55,13 @@ Run cheatcheat with a specific YAML cheatsheet file:
 
 ### Custom Cheatsheet Directory
 
-Specify a different directory containing your cheatsheets:
+Specify a different directory containing your cheatsheets using either an environment variable or command-line flag:
 
 ```bash
+# Using environment variable
+CHEATSHEET_DIR=/path/to/my/cheatsheets ./cheatcheat
+
+# Using command-line flag (takes priority over environment variable)
 ./cheatcheat --dir /path/to/my/cheatsheets
 ```
 
